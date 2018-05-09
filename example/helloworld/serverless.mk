@@ -5,7 +5,7 @@ VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --lo
 TEST   ?= tests
 REBAR  ?= 3.5.0
 REL    ?= ${APP}-${VSN}.zip
-DOCKER  = serverless
+DOCKER  = fogfish/serverless
 
 ## erlang runtime configration flags
 ROOT   = $(shell pwd)

@@ -6,6 +6,7 @@
 %%
 %%
 main(_) ->
+   application:ensure_all_started(erlcloud),
    serverless:start(fun identity/1).   
 
 
