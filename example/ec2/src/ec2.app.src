@@ -1,0 +1,13 @@
+{application, ec2,
+   [
+      {description, "serverless ec2"},
+      {vsn,         "0.0.0"},
+      {modules,     []},
+      {registered,  []},
+      {applications,[
+         kernel
+        ,stdlib
+      ]},
+      {env, []}
+   ]
+}.
