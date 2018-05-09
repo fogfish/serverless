@@ -3,12 +3,31 @@
 -module(serverless).
 -compile({parse_transform, category}).
 
--export([start/1]).
+-export([
+   start/1,
+   once/1
+]).
+
+%%
+%%
+-spec start(_) -> ok.
 
 start(Fun) ->
    [either ||
       io:setopts([binary]),
       loop(Fun)
+   ].
+
+%%
+%%
+-spec once(_) -> ok.
+
+once(Fun) ->
+   [either ||
+      io:setopts([binary]),
+      recv(),
+      Fun(_),
+      send(_)
    ].
 
 loop(Fun) ->
