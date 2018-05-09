@@ -1,0 +1,15 @@
+{application, serverless,
+   [
+      {description, "serverless bootstrap for Erlang"},
+      {vsn,         "0.0.0"},
+      {modules,     []},
+      {registered,  []},
+      {applications,[
+         kernel,
+         stdlib,
+         datum,
+         jsx
+      ]},
+      {env, []}
+   ]
+}.  
