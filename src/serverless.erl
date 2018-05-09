@@ -30,6 +30,7 @@ once(Fun) ->
       send(_)
    ].
 
+%%
 loop(Fun) ->
    [either ||
       recv(),
@@ -38,12 +39,18 @@ loop(Fun) ->
       loop(Fun)
    ].
 
+%%
 recv() ->
-   [either ||
-      file:read_line(standard_io),
-      cats:unit( jsx:decode(_, [return_maps]) )
-   ].
+   case file:read_line(standard_io) of
+      {ok, Json} ->
+         {ok, jsx:decode(Json, [return_maps])};
+      {error, _} = Error ->
+         Error;
+      eof ->
+         {error, eof}
+   end.
 
+%%
 send(undefined) ->
    ok;
 send(Json) ->
