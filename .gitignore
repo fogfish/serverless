@@ -5,6 +5,7 @@
 *.dump
 *.tag.gz
 *.tgz
+*.zip
 test.*
 .eunit/
 tests/

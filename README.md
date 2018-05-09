@@ -1,4 +1,10 @@
 # serverless
 
-Run Erlang application using serverless solutions  
+Run and ship Erlang applications as serverless solution
+
+
+## Inspiration
+
+
+## Getting started
 
