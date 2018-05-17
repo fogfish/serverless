@@ -23,7 +23,7 @@
 %%%------------------------------------------------------------------
 spawn(Lambda) ->
    {ok, _} = application:ensure_all_started(serverless, permanent),
-   supervisor:start_child(serverless_sup,
+   {ok, _} = supervisor:start_child(serverless_sup,
       {serverless_lambda,  
          {serverless_lambda, start_link, [Lambda]}, 
          permanent, 
@@ -31,7 +31,11 @@ spawn(Lambda) ->
          worker, 
          dynamic
       }
-   ).
+   ),
+   spawn_loop().
+
+spawn_loop() ->
+   receive _ -> spawn_loop() end.
 
 %%%------------------------------------------------------------------
 %%%
