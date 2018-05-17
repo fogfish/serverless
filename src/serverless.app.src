@@ -8,8 +8,10 @@
          kernel,
          stdlib,
          datum,
-         jsx
+         jsx,
+         erlcloud
       ]},
+      {mod, {serverless_app, []}},
       {env, []}
    ]
 }.  
