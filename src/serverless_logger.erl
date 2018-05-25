@@ -2,7 +2,7 @@
 -behaviour(pipe).
 -compile({parse_transform, category}).
 
--export([log/3]).
+-export([log/3, sync/0]).
 -export([
    start_link/0,
    init/1,
@@ -25,6 +25,8 @@
 log(Type, Pid, Msg) ->
    pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
+sync() ->
+   pipe:call(?MODULE, sync).
 
 %%-----------------------------------------------------------------------------
 %%
@@ -73,7 +75,11 @@ handle({T, Type, Pid, Msg}, _, #state{group = Group, stream = Stream, token = To
 
       Error ->
          {stop, Error, State}
-   end.
+   end;
+
+handle(sync, Pipe, State) ->
+   pipe:ack(Pipe, ok),
+   {next_state, handle, State}.
 
 %%-----------------------------------------------------------------------------
 %%

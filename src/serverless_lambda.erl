@@ -61,6 +61,7 @@ send(undefined) ->
    ok;
 send(Json) ->
    [either ||
+      sync(),
       cats:unit(jsx:encode(Json)),
       file:write(standard_io, _)
    ].
@@ -77,3 +78,7 @@ exec(Lambda, In) ->
       Any ->
          {ok, Any}
    end.
+
+%%
+sync() ->
+   serverless_logger:sync().
