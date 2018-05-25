@@ -26,7 +26,7 @@ log(Type, Pid, Msg) ->
    pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
 sync() ->
-   pipe:call(?MODULE, sync).
+   pipe:call(?MODULE, sync, infinity).
 
 %%-----------------------------------------------------------------------------
 %%
