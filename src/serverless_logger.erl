@@ -2,7 +2,7 @@
 -behaviour(pipe).
 -compile({parse_transform, category}).
 
--export([log/3, sync/0]).
+-export([log/3, resume/0, suspend/0]).
 -export([
    start_link/0,
    init/1,
@@ -14,7 +14,7 @@
 -record(state, {
    group  = undefined :: _,
    stream = undefined :: _,
-   token  = undefined :: _
+   events = undefined :: _
 }).
 
 %%-----------------------------------------------------------------------------
@@ -25,8 +25,11 @@
 log(Type, Pid, Msg) ->
    pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
-sync() ->
-   pipe:call(?MODULE, sync, infinity).
+resume() ->
+   pipe:call(?MODULE, resume, infinity).
+
+suspend() ->
+   pipe:call(?MODULE, suspend, infinity).
 
 %%-----------------------------------------------------------------------------
 %%
@@ -40,16 +43,13 @@ init(_) ->
    [either ||
       cats:unit( erlang:process_flag(trap_exit, true) ),
       serverless_logger_std:start(),
-      Config <- erlcloud_aws:auto_config(),
       Group  <- env("AWS_LAMBDA_LOG_GROUP_NAME"),
       Stream <- env("AWS_LAMBDA_LOG_STREAM_NAME"),
-      erlcloud_cloudwatch_logs:describe_log_streams(Group, Stream, Config),
-      Token  =< token(_, _),
-      cats:unit(handle, 
+      cats:unit(handle,
          #state{
             group  = Group,
             stream = Stream,
-            token  = Token
+            events = q:new()
          }
       )
    ].
@@ -62,24 +62,32 @@ free(_, _) ->
 %% state machine
 %%
 %%-----------------------------------------------------------------------------
-handle({T, Type, Pid, Msg}, _, #state{group = Group, stream = Stream, token = Token} = State) ->
-   case
-      [either ||
-         Config  <- erlcloud_aws:auto_config(),
-         cats:unit([#{message => message(Type, Pid, Msg), timestamp => milliseconds(T)}]),
-         erlcloud_cloudwatch_logs:put_logs_events(Group, Stream, Token, _, Config)
-      ]
-   of
-      {ok, NextToken} ->
-         {next_state, handle, State#state{token = NextToken}};
+handle({T, Type, Pid, Msg}, _, #state{events = Events} = State) ->
+   {next_state, handle,
+      State#state{
+         events = q:enq(
+            #{
+               message => message(Type, Pid, Msg), 
+               timestamp => milliseconds(T)
+            }, 
+            Events
+         )
+      }
+   };
 
-      Error ->
-         {stop, Error, State}
-   end;
-
-handle(sync, Pipe, State) ->
+handle(resume, Pipe, #state{} = State) ->
    pipe:ack(Pipe, ok),
-   {next_state, handle, State}.
+   {next_state, handle, State};
+
+handle(suspend, Pipe, #state{group = Group, stream = Stream, events = Events} = State) ->
+   [either ||
+      Config <- erlcloud_aws:auto_config(),
+      erlcloud_cloudwatch_logs:describe_log_streams(Group, Stream, Config),
+      cats:unit(token(_, _)),
+      erlcloud_cloudwatch_logs:put_logs_events(Group, Stream, _, q:list(Events), Config)
+   ],
+   pipe:ack(Pipe, ok),
+   {next_state, handle, State#state{events = q:new()}}.
 
 %%-----------------------------------------------------------------------------
 %%

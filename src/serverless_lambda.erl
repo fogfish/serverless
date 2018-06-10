@@ -47,6 +47,7 @@ loop(Lambda) ->
 
 %%
 recv() ->
+   resume(),
    case file:read_line(standard_io) of
       {ok, Json} ->
          {ok, jsx:decode(Json, [return_maps])};
@@ -61,7 +62,7 @@ send(undefined) ->
    ok;
 send(Json) ->
    [either ||
-      sync(),
+      suspend(),
       cats:unit(jsx:encode(Json)),
       file:write(standard_io, _)
    ].
@@ -80,5 +81,9 @@ exec(Lambda, In) ->
    end.
 
 %%
-sync() ->
-   serverless_logger:sync().
+resume() ->
+   serverless_logger:resume().
+
+%%
+suspend() ->
+   serverless_logger:suspend().
