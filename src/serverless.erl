@@ -26,7 +26,7 @@ spawn(Lambda) ->
    {ok, _} = supervisor:start_child(serverless_sup,
       {serverless_lambda,  
          {serverless_lambda, start_link, [Lambda]}, 
-         permanent, 
+         permanent,
          10, 
          worker, 
          dynamic
@@ -46,40 +46,39 @@ spawn_loop() ->
 %%
 %% system us unusable
 emergency(Msg) ->
-   error_logger:error_report(emergency, Msg).
+   serverless_logger:log(emergency, self(), Msg).
 
 %%
 %% action must be taken immediately
 alert(Msg) ->
-   error_logger:error_report(alert, Msg).
+   serverless_logger:log(alert, self(), Msg).
 
 %%
 %% 
 critical(Msg) ->
-   error_logger:error_report(critical, Msg).
+   serverless_logger:log(critical, self(), Msg).
 
 %%
 %% 
 error(Msg) ->
-   error_logger:error_report(error, Msg).
+   serverless_logger:log(error, self(), Msg).
 
 %%
 %% 
 warning(Msg) ->
-   error_logger:warning_report(warning, Msg).
+   serverless_logger:log(warning, self(), Msg).
 
 %%
 %% normal but significant conditions
 notice(Msg) ->
-   error_logger:warning_report(notice, Msg).
+   serverless_logger:log(notice, self(), Msg).
 
 %%
 %% informational messages
 info(Msg) ->
-   error_logger:info_report(info, Msg).
+   serverless_logger:log(info, self(), Msg).
 
 %%
 %% debug-level messages
 debug(Msg) ->
-   error_logger:info_report(debug, Msg).
-
+   serverless_logger:log(debug, self(), Msg).
