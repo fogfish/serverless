@@ -1,11 +1,22 @@
-.PHONY: all compile test dist
+##
+## Copyright (C) 2018 Dmitry Kolesnikov
+##
+## This Makefile may be modified and distributed under the terms
+## of the MIT license.  See the LICENSE file for details.
+## https://github.com/fogfish/makefile
+##
+## @doc
+##   This makefile is the wrapper of rebar to build serverless applications
+##
+## @version 0.2.0
+.PHONY: all compile test dist distclean cloud-init cloud-patch cloud rebar3
 
 APP    := $(strip $(APP))
 VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-dev")
 TEST   ?= tests
 REBAR  ?= 3.5.0
 REL    ?= ${APP}-${VSN}.zip
-DOCKER  = fogfish/serverless
+DOCKER  = fogfish/erlang-serverless:20.3
 
 ## erlang runtime configration flags
 ROOT   = $(shell pwd)
@@ -35,7 +46,7 @@ BOOT_CT = \
             erlang:halt(0) \
       end.
 
-BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /fun/\nRUN cd /fun && sed -i -e \"s/APP/${APP}/\" index.js && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
+BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /var/task/\nRUN cd /var/task && sed -i -e \"s/APP/${APP}/\" index.js && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
 
 
 #####################################################################
@@ -77,10 +88,11 @@ testclean:
 clean: testclean
 	-@./rebar3 clean
 	@rm -Rf _build/builder
-	@rm -Rf _build/default/rel
 	@rm -rf log
 	@rm -f  *.tar.gz
+	@rm -f  *.zip
 	@rm -f  *.bundle
+	-@rm -Rf _build/default/bin
 
 ##
 ##
@@ -89,22 +101,29 @@ dist: ${REL}
 ${REL}: _build/builder _build/default/bin/${APP}
 	docker build --file=$< --force-rm=true --build-arg="VERSION=${VSN}" --tag=build/${APP}:latest . ;\
 	I=`docker create build/${APP}:latest` ;\
-	docker cp $$I:/fun/$@ $@ ;\
+	docker cp $$I:/var/task/$@ $@ ;\
 	docker rm -f $$I ;\
 	docker rmi build/${APP}:latest ;\
 	test -f $@ && echo "==> tarball: $@"
 
-_build/default/bin/${APP}: all 
+_build/default/bin/${APP}: all
 	@./rebar3 escriptize
 
 _build/builder:
 	@mkdir -p _build && echo "${BUILDER}" > $@
 
-fun:
+##
+##
+distclean: clean
+	-@rm -Rf _build
+	-@rm rebar3
+
+
+function:
 	I=`docker create ${DOCKER}` ;\
-	docker cp $$I:/template/src . ;\
-	docker cp $$I:/template/test . ;\
-	docker cp $$I:/template/rebar.config . ;\
+	docker cp $$I:/function/src . ;\
+	docker cp $$I:/function/test . ;\
+	docker cp $$I:/function/rebar.config . ;\
 	docker rm -f $$I ;\
 	sed -i '' -e "s/APP/${APP}/" src/* ;\
 	sed -i '' -e "s/APP/${APP}/" test/* ;\
@@ -137,7 +156,7 @@ cloud-patch:
 	   --publish \
 	   --zip-file fileb://./${REL}
 
-config:
+cloud:
 	@aws lambda get-function --function-name ${ENV}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init
 
 

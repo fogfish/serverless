@@ -1,0 +1,26 @@
+{"1.1.0",
+[{<<"base16">>,{pkg,<<"base16">>,<<"1.0.0">>},2},
+ {<<"datum">>,{pkg,<<"datum">>,<<"4.3.6">>},1},
+ {<<"eini">>,{pkg,<<"eini">>,<<"1.2.4">>},2},
+ {<<"erlcloud">>,
+  {git,"https://github.com/fogfish/erlcloud",
+       {ref,"69c00beac4144b9ae699c20d84de87cf6ce87a60"}},
+  1},
+ {<<"jsx">>,{pkg,<<"jsx">>,<<"2.9.0">>},1},
+ {<<"lhttpc">>,{pkg,<<"lhttpc">>,<<"1.5.4">>},2},
+ {<<"meck">>,{pkg,<<"meck">>,<<"0.8.12">>},1},
+ {<<"pipe">>,{pkg,<<"pipes">>,<<"2.0.0">>},1},
+ {<<"serverless">>,
+  {git,"https://github.com/fogfish/serverless",
+       {ref,"5afb0f9831ccc48648faaa185632ada482cf7483"}},
+  0}]}.
+[
+{pkg_hash,[
+ {<<"base16">>, <<"283644E2B21BD5915ACB7178BED7851FB07C6E5749B8FAD68A53C501092176D9">>},
+ {<<"datum">>, <<"07AA802EF8C68FC990164BB398890FBE03FF4FA30570C37BF6D836A4FDF27D54">>},
+ {<<"eini">>, <<"ABD64A0533398A6D714D21219BB85F2D41FDB42665AC4080939B7BFA8E55F386">>},
+ {<<"jsx">>, <<"D2F6E5F069C00266CAD52FB15D87C428579EA4D7D73A33669E12679E203329DD">>},
+ {<<"lhttpc">>, <<"405E4F460D67FE8F43F0E6D64E4D168F8A5CFF3AD34D78114688753DAA80FBEB">>},
+ {<<"meck">>, <<"1F7B1A9F5D12C511848FEC26BBEFD09A21E1432EADB8982D9A8ACEB9891A3CF2">>},
+ {<<"pipe">>, <<"A10DF54F1EC80EAA491EE7BD689C794886E6E668A9F05436514695E9CF5370AE">>}]}
+].
