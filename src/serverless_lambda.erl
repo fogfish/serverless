@@ -59,6 +59,7 @@ recv() ->
 
 %%
 send(undefined) ->
+   suspend(),
    ok;
 send(Json) ->
    [either ||

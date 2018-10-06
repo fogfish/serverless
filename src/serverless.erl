@@ -5,7 +5,8 @@
 
 -export([
    spawn/1,
-
+   
+   %% logger api
    emergency/1,
    alert/1,
    critical/1,
@@ -23,15 +24,7 @@
 %%%------------------------------------------------------------------
 spawn(Lambda) ->
    {ok, _} = application:ensure_all_started(serverless, permanent),
-   {ok, _} = supervisor:start_child(serverless_sup,
-      {serverless_lambda,  
-         {serverless_lambda, start_link, [Lambda]}, 
-         permanent,
-         10, 
-         worker, 
-         dynamic
-      }
-   ),
+   {ok, _} = serverless_sup:spawn(Lambda),
    spawn_loop().
 
 spawn_loop() ->

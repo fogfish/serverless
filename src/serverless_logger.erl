@@ -75,19 +75,17 @@ handle({T, Type, Pid, Msg}, _, #state{events = Events} = State) ->
       }
    };
 
-handle(resume, Pipe, #state{} = State) ->
-   pipe:ack(Pipe, ok),
-   {next_state, handle, State};
+handle(resume, _, #state{} = State) ->
+   {reply, ok, State};
 
-handle(suspend, Pipe, #state{group = Group, stream = Stream, events = Events} = State) ->
+handle(suspend, _, #state{group = Group, stream = Stream, events = Events} = State) ->
    [either ||
       Config <- erlcloud_aws:auto_config(),
       erlcloud_cloudwatch_logs:describe_log_streams(Group, Stream, Config),
       cats:unit(token(_, _)),
       erlcloud_cloudwatch_logs:put_logs_events(Group, Stream, _, q:list(Events), Config)
    ],
-   pipe:ack(Pipe, ok),
-   {next_state, handle, State#state{events = q:new()}}.
+   {reply, ok, State#state{events = q:new()}}.
 
 %%-----------------------------------------------------------------------------
 %%

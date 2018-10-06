@@ -2,7 +2,9 @@
 -behaviour(supervisor).
 
 -export([
-   start_link/0, init/1
+   start_link/0,
+   init/1,
+   spawn/1
 ]).
 
 %%
@@ -28,3 +30,7 @@ init([]) ->
          ]
       }
    }.
+
+%%
+spawn(Lambda) ->
+   supervisor:start_child(?MODULE, ?CHILD(worker, serverless_lambda, [Lambda])).
