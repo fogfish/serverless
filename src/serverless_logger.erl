@@ -78,15 +78,10 @@ handle({T, Type, Pid, Msg}, _, #state{events = Events} = State) ->
 handle(resume, _, #state{} = State) ->
    {reply, ok, State};
 
-handle(suspend, _, #state{group = Group, stream = Stream, events = Events} = State) ->
-   [either ||
-      Config <- erlcloud_aws:auto_config(),
-      erlcloud_cloudwatch_logs:describe_log_streams(Group, Stream, Config),
-      cats:unit(token(_, _)),
-      erlcloud_cloudwatch_logs:put_logs_events(Group, Stream, _, q:list(Events), Config)
-   ],
+handle(suspend, _, #state{} = State) ->
+   suspend(State),
    {reply, ok, State#state{events = q:new()}}.
-
+  
 %%-----------------------------------------------------------------------------
 %%
 %% private
@@ -121,3 +116,26 @@ message(Type, Pid, Msg) ->
    erlang:iolist_to_binary(
       io_lib:format("[~s] ~p: ~s", [Type, Pid, jsx:encode(Msg)])
    ).
+
+%%
+publish(#state{group = Group, stream = Stream, events = Events}) ->
+   [either ||
+      Config <- erlcloud_aws:auto_config(),
+      erlcloud_cloudwatch_logs:describe_log_streams(Group, Stream, Config),
+      cats:unit(token(_, _)),
+      erlcloud_cloudwatch_logs:put_logs_events(Group, Stream, _, q:list(Events), Config)
+   ].  
+
+%%
+suspend(#state{} = State) ->
+   case publish(State) of
+      {error, {http_error, 400, _, Reason}} ->
+         case jsx:decode(Reason, [return_maps]) of
+            #{<<"__type">> := <<"InvalidSequenceTokenException">>} ->
+               suspend(State);
+            _ ->
+               ok
+         end;
+      _ ->
+         ok
+   end.

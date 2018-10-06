@@ -3,16 +3,15 @@
 
 -export([all/0]).
 -export([
-   spawn/1,
-   lambda/1,
-   logger/1
+   spawn/1
+,  lambda/1
+,  logger/1
 ]).
 
 all() ->
-   [
-      spawn,
-      lambda,
-      logger
+   [Test || {Test, NAry} <- ?MODULE:module_info(exports), 
+      Test =/= module_info,
+      NAry =:= 1
    ].
 
 
@@ -28,7 +27,7 @@ spawn(_) ->
    timer:sleep(100),
    application:stop(serverless),
 
-   1  = meck:num_calls(erlcloud_cloudwatch_logs, describe_log_streams, '_'),
+   0  = meck:num_calls(erlcloud_cloudwatch_logs, describe_log_streams, '_'),
    true = meck:validate(erlcloud_cloudwatch_logs),
 
    unset_erlcloud_cloudwatch_logs(),
@@ -36,20 +35,26 @@ spawn(_) ->
 
 
 lambda(_) ->
+   setup_env(),
+   setup_erlcloud_cloudwatch_logs(),
    setup_io(),
 
-   {ok, _} = serverless_lambda:start_link(
-      fun(X) -> 
-         {ok, X} 
+   erlang:spawn_link(
+      fun() ->
+         serverless:spawn(fun(X) -> {ok, X} end)
       end
    ),
    timer:sleep(100),
+   application:stop(serverless),
 
    true = meck:num_calls(file, read_line, '_') > 0,
    true = meck:num_calls(file, write, '_') > 0,
    true = meck:validate(file),
 
-   unset_io().
+   unset_io(),
+   unset_erlcloud_cloudwatch_logs(),
+   unset_env().
+
 
 
 logger(_) ->
@@ -65,10 +70,10 @@ logger(_) ->
    serverless:notice(x),
    serverless:info(x),
    serverless:debug(x),
-   timer:sleep(100),
+   serverless_logger:suspend(),
 
    1 = meck:num_calls(erlcloud_cloudwatch_logs, describe_log_streams, '_'),
-   8 = meck:num_calls(erlcloud_cloudwatch_logs, put_logs_events, '_'),
+   1 = meck:num_calls(erlcloud_cloudwatch_logs, put_logs_events, '_'),
    true = meck:validate(erlcloud_cloudwatch_logs),
 
    unset_erlcloud_cloudwatch_logs(),
