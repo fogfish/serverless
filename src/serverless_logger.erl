@@ -116,7 +116,7 @@ message(Type, Pid, [H | _] = Msg)
    );
 
 message(Type, Pid, Msg)
- when is_map(H) ->
+ when is_map(Msg) ->
    erlang:iolist_to_binary(
       io_lib:format("[~s] ~p: ~s", [Type, Pid, jsx:encode(Msg)])
    );
