@@ -39,39 +39,39 @@ spawn_loop() ->
 %%
 %% system us unusable
 emergency(Msg) ->
-   serverless_logger:log(emergency, self(), Msg).
+   serverless_logger:log_(emergency, self(), Msg).
 
 %%
 %% action must be taken immediately
 alert(Msg) ->
-   serverless_logger:log(alert, self(), Msg).
+   serverless_logger:log_(alert, self(), Msg).
 
 %%
 %% 
 critical(Msg) ->
-   serverless_logger:log(critical, self(), Msg).
+   serverless_logger:log_(critical, self(), Msg).
 
 %%
 %% 
 error(Msg) ->
-   serverless_logger:log(error, self(), Msg).
+   serverless_logger:log_(error, self(), Msg).
 
 %%
 %% 
 warning(Msg) ->
-   serverless_logger:log(warning, self(), Msg).
+   serverless_logger:log_(warning, self(), Msg).
 
 %%
 %% normal but significant conditions
 notice(Msg) ->
-   serverless_logger:log(notice, self(), Msg).
+   serverless_logger:log_(notice, self(), Msg).
 
 %%
 %% informational messages
 info(Msg) ->
-   serverless_logger:log(info, self(), Msg).
+   serverless_logger:log_(info, self(), Msg).
 
 %%
 %% debug-level messages
 debug(Msg) ->
-   serverless_logger:log(debug, self(), Msg).
+   serverless_logger:log_(debug, self(), Msg).

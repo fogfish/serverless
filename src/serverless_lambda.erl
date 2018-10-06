@@ -59,11 +59,9 @@ recv() ->
 
 %%
 send(undefined) ->
-   suspend(),
    ok;
 send(Json) ->
    [either ||
-      suspend(),
       cats:unit(jsx:encode(Json)),
       file:write(standard_io, _)
    ].
@@ -72,12 +70,17 @@ send(Json) ->
 exec(Lambda, In) ->
    case Lambda(In) of
       {ok, _} = Result ->
+         suspend(),
          Result;
       {error, _} = Error ->
+         serverless_logger:log(critical, self(), Error),
+         suspend(),
          Error;
       ok  ->
+         suspend(),
          {ok, undefined};
       Any ->
+         suspend(),
          {ok, Any}
    end.
 

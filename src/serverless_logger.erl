@@ -2,7 +2,7 @@
 -behaviour(pipe).
 -compile({parse_transform, category}).
 
--export([log/3, resume/0, suspend/0]).
+-export([log/3, log_/3, resume/0, suspend/0]).
 -export([
    start_link/0,
    init/1,
@@ -23,6 +23,9 @@
 %%
 %%-----------------------------------------------------------------------------
 log(Type, Pid, Msg) ->
+   pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
+
+log_(Type, Pid, Msg) ->
    pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
 resume() ->
@@ -63,7 +66,7 @@ free(_, _) ->
 %%
 %%-----------------------------------------------------------------------------
 handle({T, Type, Pid, Msg}, _, #state{events = Events} = State) ->
-   {next_state, handle,
+   {reply, ok,
       State#state{
          events = q:enq(
             #{
@@ -112,10 +115,17 @@ message(Type, Pid, [H | _] = Msg)
       io_lib:format("[~s] ~p: ~s", [Type, Pid, Msg])
    );
 
-message(Type, Pid, Msg) ->
+message(Type, Pid, Msg)
+ when is_map(H) ->
    erlang:iolist_to_binary(
       io_lib:format("[~s] ~p: ~s", [Type, Pid, jsx:encode(Msg)])
+   );
+
+message(Type, Pid, Msg) ->
+   erlang:iolist_to_binary(
+      io_lib:format("[~s] ~p: ~p", [Type, Pid, Msg])
    ).
+
 
 %%
 publish(#state{group = Group, stream = Stream, events = Events}) ->
