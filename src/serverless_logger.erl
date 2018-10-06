@@ -1,6 +1,7 @@
 -module(serverless_logger).
 -behaviour(pipe).
 -compile({parse_transform, category}).
+-include_lib("datum/include/datum.hrl").
 
 -export([log/3, log_/3, resume/0, suspend/0]).
 -export([
@@ -95,7 +96,7 @@ handle(suspend, _, #state{} = State) ->
 env(Var) ->
    case os:getenv(Var) of
       false ->
-         {error, {env, Var}};
+         {ok, undefined};
       Value ->
          {ok, erlang:iolist_to_binary(Value)}
    end.
@@ -128,6 +129,14 @@ message(Type, Pid, Msg) ->
 
 
 %%
+publish(#state{group = undefined, stream = undefined, events = Events}) ->
+   lists:foreach(
+      fun(#{message := Message}) -> 
+         file:write(standard_error, Message)
+      end,
+      q:list(Events)
+   );
+
 publish(#state{group = Group, stream = Stream, events = Events}) ->
    [either ||
       Config <- erlcloud_aws:auto_config(),
@@ -137,6 +146,8 @@ publish(#state{group = Group, stream = Stream, events = Events}) ->
    ].  
 
 %%
+suspend(#state{events = ?queue()} = State) ->
+   ok;
 suspend(#state{} = State) ->
    case publish(State) of
       {error, {http_error, 400, _, Reason}} ->
