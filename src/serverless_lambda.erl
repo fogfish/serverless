@@ -42,8 +42,14 @@ handle(_, _, State) ->
 %%-----------------------------------------------------------------------------
 
 loop(Lambda, State0) ->
-   [Result | State1] = Lambda(State0),
-   loop(Lambda, State1).
+   try
+      [Result | State1] = Lambda(State0),
+      loop(Lambda, State1)
+   catch throw:Reason ->
+      serverless_logger:log(emergency, self(), Reason),
+      suspend(),
+      exit(Reason)
+   end.
 
 %%
 lifecycle(Host, Lambda) ->
