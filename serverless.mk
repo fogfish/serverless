@@ -8,8 +8,8 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.2.0
-.PHONY: all compile test dist distclean cloud-init cloud-patch cloud rebar3
+## @version 0.2.1
+.PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
 VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-dev")
