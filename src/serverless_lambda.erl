@@ -53,8 +53,8 @@ loop(Lambda, State0) ->
 %%
 lifecycle(Host, Lambda) ->
    [m_state ||
-      Json <- queue(Host),
-      cats:unit( exec(Lambda, Json) ),
+      queue(Host),
+      cats:unit( exec(Lambda, _) ),
       finalise(Host, _)
    ].
 
@@ -108,7 +108,8 @@ exec(Lambda, {RequestId, Json}) ->
             Any ->
                {ok, Any}
          end
-      end
+      end,
+      [monitor]
    ),
    receive
       {ok, Result} ->
