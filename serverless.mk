@@ -46,7 +46,7 @@ BOOT_CT = \
             erlang:halt(0) \
       end.
 
-BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /var/task/\nRUN cd /var/task && sed -i -e \"s/APP/${APP}/\" index.js && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
+BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /var/task/\nRUN cd /var/task && sed -i -e \"s/APP/${APP}/\" bootstrap && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
 
 
 #####################################################################
