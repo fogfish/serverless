@@ -111,7 +111,8 @@ exec(Lambda, {RequestId, Json}) ->
             Any ->
                {ok, Any}
          end
-      end
+      end,
+      [monitor]
    ),
    receive
       {ok, Result} ->
