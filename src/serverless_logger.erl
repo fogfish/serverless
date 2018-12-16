@@ -11,7 +11,7 @@ log(Type, Pid, Msg)
  when Type =:= warning ->
    error_logger:warning_msg(message(Type, Pid, Msg));
 log(Type, Pid, Msg) 
- when Type =:= notice orelse Type =:= info orelse Type = debug ->
+ when Type =:= notice orelse Type =:= info orelse Type =:= debug ->
    error_logger:error_msg(message(Type, Pid, Msg)).
 
 %%
