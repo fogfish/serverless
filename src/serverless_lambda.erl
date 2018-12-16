@@ -97,17 +97,29 @@ finalise(Host, {error, RequestId, Reason}) ->
 
 %%
 exec(Lambda, {RequestId, Json}) ->
-   %% TODO: spawn a new process per invocation
-   case Lambda(Json) of
+   Self = self(),
+   {Pid, Ref} = erlang:spawn_opt(
+      fun() ->
+         case Lambda(Json) of
+            {ok, Result} ->
+               Self ! {ok, Result};
+            {error, Reason} = Error ->
+               serverless_logger:log(critical, self(), Error),
+               Self ! {error, Reason};
+            ok  ->
+               {ok, undefined};
+            Any ->
+               {ok, Any}
+         end
+      end
+   ),
+   receive
       {ok, Result} ->
          {ok, RequestId, Result};
-      {error, Reason} = Error ->
-         serverless_logger:log(critical, self(), Error),
+      {error, Reason} ->
          {error, RequestId, Reason};
-      ok  ->
-         {ok, {RequestId, <<>>}};
-      Any ->
-         {ok, {RequestId, Any}}
+      {'DOWN', Ref, process, Pid, Reason} ->
+         {error, RequestId, Reason}
    end.
 
 %%
