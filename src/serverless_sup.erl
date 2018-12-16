@@ -26,7 +26,6 @@ init([]) ->
       {
          {one_for_one, 4, 300},
          [
-            ?CHILD(worker, serverless_logger)
          ]
       }
    }.
