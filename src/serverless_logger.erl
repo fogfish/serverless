@@ -6,13 +6,13 @@
 %%
 log(Type, Pid, Msg)
  when Type =:= emergency orelse Type =:= alert orelse Type =:= critical orelse Type =:= error ->
-   io:put_chars(message(Type, Pid, Msg));
+   io:format(message(Type, Pid, Msg));
 log(Type, Pid, Msg)
  when Type =:= warning ->
-   io:put_chars(message(Type, Pid, Msg));
+   io:format(message(Type, Pid, Msg));
 log(Type, Pid, Msg) 
  when Type =:= notice orelse Type =:= info orelse Type =:= debug ->
-   io:put_chars(message(Type, Pid, Msg)).
+   io:format(message(Type, Pid, Msg)).
 
 %%
 %%
