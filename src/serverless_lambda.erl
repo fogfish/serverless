@@ -120,6 +120,7 @@ exec(Lambda, {RequestId, Json}) ->
       {error, Reason} ->
          {error, RequestId, Reason};
       {'DOWN', Ref, process, Pid, Reason} ->
+         serverless_logger:log(error, self(), Reason),
          {error, RequestId, Reason}
    end.
 
