@@ -45,8 +45,9 @@ loop(Lambda, State0) ->
    try
       [Result | State1] = Lambda(State0),
       loop(Lambda, State1)
-   catch throw:Reason ->
+   catch _:Reason ->
       serverless_logger:log(emergency, self(), Reason),
+      serverless_logger:log(emergency, self(), erlang:get_stacktrace()),
       suspend(),
       exit(Reason)
    end.

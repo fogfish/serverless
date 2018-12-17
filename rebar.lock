@@ -21,7 +21,7 @@
  {<<"jsx">>,{pkg,<<"jsx">>,<<"2.9.0">>},0},
  {<<"knet">>,
   {git,"https://github.com/kfsm/knet",
-       {ref,"6fa57be0f67021d9694470991009de5f80e527b0"}},
+       {ref,"492d0fe43dc6f1bfae6718aa9ba5536f0e7bcb29"}},
   0},
  {<<"lhttpc">>,{pkg,<<"lhttpc">>,<<"1.5.4">>},1},
  {<<"meck">>,{pkg,<<"meck">>,<<"0.8.12">>},0},
