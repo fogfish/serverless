@@ -5,7 +5,7 @@ Serverless support for Erlang applications.
 
 ## Inspiration
 
-Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [child processes in Node.js](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/) techniques.
+Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [AWS Lambda Runtime Interface](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html).
 
 The library uses [escript](http://erlang.org/doc/man/escript.html) executables to package, debug and deploy lambda functions.  
 
@@ -15,7 +15,7 @@ The latest version of the library is available at its `master` branch. All devel
 
 Add the library as dependency to rebar.config
 
-```
+```erlang
 {deps, [
    {serverless, ".*",
       {git, "https://github.com/fogfish/serverless", {branch, master}}
@@ -31,13 +31,13 @@ The library defines a workflow of distribution Erlang application from sources t
 
 The easiest way to start with Erlang serverless function is a template provided by [serverless.mk](serverless.mk). 
 
-Download the workflow orchestration file
+Create a new folder for your function and download the workflow orchestration file. 
 
-```
+```bash
 curl -O -L https://raw.githubusercontent.com/fogfish/serverless/master/serverless.mk
 ``` 
 
-Create a Makefile
+then, create a Makefile
 
 ```Makefile
 APP      = name-of-my-function
@@ -50,9 +50,9 @@ MEMORY  ?= 256
 include serverless.mk
 ```
 
-Generate empty function
+Use build-in template to generate empty function
 
-```
+```bash
 make function
 ```
 
@@ -65,7 +65,7 @@ You project is ready for development.
 
 The easiest way to compile and test the application is the default Makefile target. You can also invoke compile and test targets sequentially.
 
-```
+```bash
 make
 ```
 
@@ -73,27 +73,31 @@ make
 
 Use **dist** target to assemble an escript executable containing the project's and its dependencies' BEAM files. This command also build a zip package containing Erlang runtime and executables of your function 
 
-```
+```bash
 make dist
 ```
 
-As the result, it produces `name-of-my-function-{version}.zip` package and `_build/default/bin/name-of-my-function` executables.
+As the result, it produces `name-of-my-function-{version}.zip` package and `_build/default/bin/name-of-my-function` executables. Note, the version is deducted from latest git tag.
 
 
-**Test release**
+**Test function**
 
-You can test executables before, they are deployed to the cloud. Executable accepts and produces JSONs from/to standard io. 
+Easiest wait to test a function with `serverless:mock` that mock a Lambda Runtime API.  
 
-```
-echo "{}" | _build/default/bin/name-of-my-function
+```erlang
+serverless:mock(
+   helloworld,                 %% Function entry point
+   #{},                        %% Mock input
+   #{<<"helloworld">> => #{}}  %% Expect output
+).
 ```
 
 **Deploy function**
 
-The workflow implements a simple commands to deploy or patch AWS a function.
+The workflow implements a simple commands to deploy or patch AWS a function. Watch out the AWS role configuration, we recommends to use AWS Cloud Formation templates for this. 
 
-```
-make config
+```bash
+make cloud
 ```
 
 Congratulations, your function is ready! 

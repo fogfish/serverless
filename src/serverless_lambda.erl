@@ -8,7 +8,8 @@
    start_link/1,
    init/1,
    free/2,
-   handle/3
+   handle/3,
+   lifecycle/2
 ]).
 
 -define(PROTOCOL, "http://").
@@ -91,7 +92,7 @@ finalise(Host, {error, RequestId, Reason}) ->
       _ > "POST " ++ Host ++ "/runtime/invocation/" ++ RequestId ++ "/error",
       _ > "Content-Type: text/plain",
       _ > "Connection: keep-alive",
-      _ > erlang:iolist_to_binary(io_lib:format("[~s] ~p: ~p", [Reason])),
+      _ > erlang:iolist_to_binary(io_lib:format("[~s] ~p", [RequestId, Reason])),
 
       _ < 202
    ].

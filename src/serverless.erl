@@ -14,7 +14,10 @@
    warning/1,
    notice/1,
    info/1,
-   debug/1
+   debug/1,
+
+   %% mock lambda runtime
+   mock/3
 ]).
 
 %%%------------------------------------------------------------------
@@ -75,3 +78,14 @@ info(Msg) ->
 %% debug-level messages
 debug(Msg) ->
    serverless_logger:log_(debug, self(), Msg).
+
+
+%%%------------------------------------------------------------------
+%%%
+%%% lambda runtime mock api
+%%%
+%%%------------------------------------------------------------------
+
+mock(Lambda, Mock, Expect) ->
+   serverless_mock:test(Lambda, Mock, Expect).
+

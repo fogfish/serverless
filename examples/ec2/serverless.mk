@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.2.1
+## @version 0.2.2
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -141,7 +141,7 @@ function:
 cloud-init:
 	@aws lambda create-function \
 		--function-name ${ENV}-${APP} \
-		--runtime nodejs8.10 \
+		--runtime provided \
 		--handler index.handler \
 		--role ${ROLE} \
 		--timeout ${TIMEOUT} \

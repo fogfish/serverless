@@ -3,9 +3,9 @@
 
 -export([all/0]).
 -export([
-   spawn/1
-,  lambda/1
-,  logger/1
+   spawn_success/1
+,  spawn_failure/1
+,  spawn_error/1
 ]).
 
 all() ->
@@ -15,129 +15,28 @@ all() ->
    ].
 
 
-spawn(_) ->
-   setup_env(),
-   setup_erlcloud_cloudwatch_logs(),
-
-   erlang:spawn_link(
-      fun() ->
-         serverless:spawn(fun(_) -> ok end)
-      end
-   ),
-   timer:sleep(100),
-   application:stop(serverless),
-
-   0  = meck:num_calls(erlcloud_cloudwatch_logs, describe_log_streams, '_'),
-   true = meck:validate(erlcloud_cloudwatch_logs),
-
-   unset_erlcloud_cloudwatch_logs(),
-   unset_env().
-
-
-lambda(_) ->
-   setup_env(),
-   setup_erlcloud_cloudwatch_logs(),
-   setup_io(),
-
-   erlang:spawn_link(
-      fun() ->
-         serverless:spawn(fun(X) -> {ok, X} end)
-      end
-   ),
-   timer:sleep(100),
-   application:stop(serverless),
-
-   true = meck:num_calls(file, read_line, '_') > 0,
-   true = meck:num_calls(file, write, '_') > 0,
-   true = meck:validate(file),
-
-   unset_io(),
-   unset_erlcloud_cloudwatch_logs(),
-   unset_env().
-
-
-
-logger(_) ->
-   setup_env(),
-   setup_erlcloud_cloudwatch_logs(),
-
-   {ok, _} = serverless_logger:start_link(),
-   serverless:emergency(x),
-   serverless:alert([{a, b}]),
-   serverless:critical("xxx"),
-   serverless:error(<<"xxx">>),
-   serverless:warning(x),
-   serverless:notice(x),
-   serverless:info(x),
-   serverless:debug(x),
-   serverless_logger:suspend(),
-
-   1 = meck:num_calls(erlcloud_cloudwatch_logs, describe_log_streams, '_'),
-   1 = meck:num_calls(erlcloud_cloudwatch_logs, put_logs_events, '_'),
-   true = meck:validate(erlcloud_cloudwatch_logs),
-
-   unset_erlcloud_cloudwatch_logs(),
-   unset_env().
-
-%%-----------------------------------------------------------------------------
-%%
-%% private
-%%
-%%-----------------------------------------------------------------------------
-
-%%
-setup_env() ->
-   true = os:putenv("AWS_ACCESS_KEY_ID", "access"),
-   true = os:putenv("AWS_SECRET_ACCESS_KEY", "secret"),
-   true = os:putenv("AWS_LAMBDA_LOG_GROUP_NAME",  "group"),
-   true = os:putenv("AWS_LAMBDA_LOG_STREAM_NAME", "stream").
-
-unset_env() ->
-   os:unsetenv("AWS_ACCESS_KEY_ID"),
-   os:unsetenv("AWS_SECRET_ACCESS_KEY"),
-   os:unsetenv("AWS_LAMBDA_LOG_GROUP_NAME"),
-   os:unsetenv("AWS_LAMBDA_LOG_STREAM_NAME").
-
-%%
-setup_erlcloud_cloudwatch_logs() ->
-   meck:new(erlcloud_cloudwatch_logs, [unstick, passthrough]),
-   meck:expect(erlcloud_cloudwatch_logs, 
-      describe_log_streams, 
-      fun(_, _, _) -> 
-         {ok, [[{<<"uploadSequenceToken">>, <<"xxx">>}]], undefined} 
-      end
-   ),
-   meck:expect(erlcloud_cloudwatch_logs,
-      put_logs_events,
-      fun(_, _, _, _, _) ->
-         {ok, <<"xxx">>}
-      end
+spawn_success(_) ->
+   serverless:mock(
+      serverless_test, 
+      #{<<"do">> => <<"ok">>},
+      #{<<"code">> => 200}
    ).
 
-unset_erlcloud_cloudwatch_logs() ->
-   meck:unload(erlcloud_cloudwatch_logs).
+spawn_failure(_) ->
+   try
+      serverless:mock(
+         serverless_test, 
+         #{<<"do">> => <<"fail">>}, 
+         #{}
+      ),
+      exit(unhandled)
+   catch _:_ ->
+      ok
+   end.
 
-%%
-setup_io() ->
-   meck:new(file, [unstick, passthrough]),
-   meck:expect(file, 
-      read_line, 
-      fun(_) -> 
-         {ok, <<"{\"h\":\"w\"}">>} 
-      end
-   ),
-   meck:expect(file, 
-      write, 
-      fun(_, X) -> 
-         case X of
-            <<"{\"h\":\"w\"}">> ->
-               ok;
-            _ ->
-               {error, badarg}
-         end
-      end
+spawn_error(_) ->
+   serverless:mock(
+      serverless_test, 
+      #{<<"do">> => <<"error">>},
+      undefined
    ).
-
-unset_io() ->
-   meck:unload(file).
-
