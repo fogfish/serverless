@@ -25,7 +25,7 @@
  {<<"pipe">>,{pkg,<<"pipes">>,<<"2.0.1">>},1},
  {<<"serverless">>,
   {git,"https://github.com/fogfish/serverless",
-       {ref,"b33768e6aaba1ad99a289b6940d098c04b512c24"}},
+       {ref,"1f08911c7be1fc087b468f1db8eda3dd85ea375a"}},
   0}]}.
 [
 {pkg_hash,[
