@@ -2,5 +2,4 @@ APP = serverless
 ORG = fogfish
 URI = 
 
-include erlang.mk
-
+include beam.mk
