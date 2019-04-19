@@ -1,12 +1,8 @@
--module(serverless_SUITE).
+-module(serverless_mock_SUITE).
 -include_lib("common_test/include/ct.hrl").
 
 -export([all/0]).
--export([
-   spawn_success/1
-,  spawn_failure/1
-,  spawn_error/1
-]).
+-compile(export_all).
 
 all() ->
    [Test || {Test, NAry} <- ?MODULE:module_info(exports), 
@@ -38,5 +34,5 @@ spawn_error(_) ->
    serverless:mock(
       serverless_test, 
       #{<<"do">> => <<"error">>},
-      undefined
+      {error, badarg}
    ).

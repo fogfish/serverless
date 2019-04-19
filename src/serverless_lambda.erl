@@ -44,7 +44,7 @@ handle(_, _, State) ->
 
 loop(Lambda, State0) ->
    try
-      [Result | State1] = Lambda(State0),
+      [_Result | State1] = Lambda(State0),
       loop(Lambda, State1)
    catch _:Reason ->
       serverless_logger:log(emergency, self(), Reason),

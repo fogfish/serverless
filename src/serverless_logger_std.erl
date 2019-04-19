@@ -26,7 +26,7 @@ init(_) ->
 terminate(_, _) ->
    ok.
 
-handle_event({error_report, _, {Pid, Type, Msg}} = X, State) ->
+handle_event({error_report, _, {Pid, Type, Msg}}, State) ->
    log(Type, Pid, Msg),
    {ok, State};
 

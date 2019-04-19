@@ -146,7 +146,7 @@ publish(#state{group = Group, stream = Stream, events = Events}) ->
    ].  
 
 %%
-suspend(#state{events = ?queue()} = State) ->
+suspend(#state{events = ?queue()}) ->
    ok;
 suspend(#state{} = State) ->
    case publish(State) of
