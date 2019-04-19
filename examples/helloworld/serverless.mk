@@ -8,13 +8,13 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.2.2
+## @version 0.2.3
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
 VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-dev")
 TEST   ?= tests
-REBAR  ?= 3.5.0
+REBAR  ?= 3.9.1
 REL    ?= ${APP}-${VSN}.zip
 DOCKER  = fogfish/erlang-serverless:20.3
 
@@ -64,17 +64,10 @@ run:
 
 ##
 ## execute common test and terminate node
-test: _build/test.beam
-	@mkdir -p /tmp/test/${APP}
-	@erl ${EFLAGS} -noshell -pa _build/ -pa test/ -run test run test/${TEST}.config
-	@F=`ls /tmp/test/${APP}/ct_run*/all.coverdata | tail -n 1` ;\
-	cp $$F /tmp/test/${APP}/ct.coverdata
+test:
+	@./rebar3 ct --config=test/${TEST}.config --cover --verbose
+	@./rebar3 cover
 
-_build/test.beam: _build/test.erl
-	@erlc -o _build $<
-
-_build/test.erl:
-	@mkdir -p _build && echo "${BOOT_CT}" > $@
 
 testclean:
 	@rm -f  _build/test.beam

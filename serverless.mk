@@ -14,7 +14,7 @@
 APP    := $(strip $(APP))
 VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-dev")
 TEST   ?= tests
-REBAR  ?= 3.5.0
+REBAR  ?= 3.9.1
 REL    ?= ${APP}-${VSN}.zip
 DOCKER  = fogfish/erlang-serverless:20.3
 
