@@ -10,7 +10,7 @@
          datum,
          pipe,
          jsx,
-         knet,
+         m_http,
          erlcloud
       ]},
       {mod, {serverless_app, []}},
