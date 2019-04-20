@@ -10,16 +10,27 @@
 %%
 %%
 test(Lambda, Mock, Expect) ->
+   application:ensure_all_started(serverless),
    meck:new(serverless, [passthrough]),
+   meck:new(serverless_logger, [passthrough]),
+
+   meck:expect(serverless_logger, log_,
+      fun(Type, Pid, Msg) ->
+         ct:pal("[~s]: ~p ~p", [Type, Pid, Msg])
+      end
+   ),
+
    meck:expect(serverless, spawn,
       fun(Fun) ->
-         case Fun(Mock) of
+         case (catch Fun(Mock)) of
             {ok, Expect} ->
                ok;
             Expect ->
                ok
-         end 
+         end
       end
    ),
    Lambda:main([]),
+
+   meck:unload(serverless_logger),
    meck:unload(serverless).

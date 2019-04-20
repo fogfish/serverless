@@ -10,7 +10,6 @@ all() ->
       NAry =:= 1
    ].
 
-
 spawn_success(_) ->
    serverless:mock(
       serverless_test, 
@@ -19,16 +18,11 @@ spawn_success(_) ->
    ).
 
 spawn_failure(_) ->
-   try
-      serverless:mock(
-         serverless_test, 
-         #{<<"do">> => <<"fail">>}, 
-         #{}
-      ),
-      exit(unhandled)
-   catch _:_ ->
-      ok
-   end.
+   serverless:mock(
+      serverless_test, 
+      #{<<"do">> => <<"fail">>}, 
+      {'EXIT', fail}
+   ).
 
 spawn_error(_) ->
    serverless:mock(
