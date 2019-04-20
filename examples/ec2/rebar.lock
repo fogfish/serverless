@@ -21,7 +21,7 @@
  {<<"pipe">>,{pkg,<<"pipes">>,<<"2.0.1">>},1},
  {<<"serverless">>,
   {git,"https://github.com/fogfish/serverless",
-       {ref,"1868278580d804800b2eec29686a3efc2c646d15"}},
+       {ref,"f638a7c01bf9767742a4649b04524267a153a99f"}},
   0},
  {<<"ssl_verify_fun">>,{pkg,<<"ssl_verify_fun">>,<<"1.1.4">>},3},
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.4.1">>},4}]}.

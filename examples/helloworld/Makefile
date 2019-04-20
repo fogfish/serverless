@@ -2,8 +2,10 @@ APP = helloworld
 ORG = 
 
 ENV     ?= dev
-ROLE    ?= put_my_role_here
+STACK   ?= ${ENV}-stack
+ROLE    ?= arn:aws:iam::000000000000:role/${STACK}-role-function
 TIMEOUT ?= 30
 MEMORY  ?= 128
+CODE    ?= s3://packages/${STACK}
 
-include serverless.mk
+include ../../serverless.mk
