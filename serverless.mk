@@ -8,11 +8,11 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.2.3
+## @version 0.2.4
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
-VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-dev")
+VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-a")
 TEST   ?= tests
 REBAR  ?= 3.9.1
 REL    ?= ${APP}-${VSN}.zip
@@ -31,20 +31,6 @@ EFLAGS = \
 	-kernel inet_dist_listen_max 32199 \
 	+P 1000000 \
 	+K true +A 160 -sbt ts
-
-## erlang common test bootstrap
-BOOT_CT = \
-   -module(test). \
-   -export([run/1]). \
-   run(Spec) -> \
-      {ok, Test} = file:consult(Spec), \
-      case lists:keymember(node, 1, Test) of \
-         false -> \
-            erlang:halt(element(2, ct:run_test([{spec, Spec}]))); \
-         true  -> \
-            ct_master:run(Spec), \
-            erlang:halt(0) \
-      end.
 
 BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /var/task/\nRUN cd /var/task && sed -i -e \"s/APP/${APP}/\" bootstrap && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
 
@@ -99,11 +85,16 @@ ${REL}: _build/builder _build/default/bin/${APP}
 	docker rmi build/${APP}:latest ;\
 	test -f $@ && echo "==> tarball: $@"
 
-_build/default/bin/${APP}: all
+_build/default/bin/${APP}: src/*.erl src/*.app.src
 	@./rebar3 escriptize
 
 _build/builder:
 	@mkdir -p _build && echo "${BUILDER}" > $@
+
+##
+##
+publish: ${REL}
+	aws s3 cp ${REL} ${CODE}/${APP}.zip
 
 ##
 ##
@@ -133,7 +124,7 @@ function:
 
 cloud-init:
 	@aws lambda create-function \
-		--function-name ${ENV}-${APP} \
+		--function-name ${STACK}-${APP} \
 		--runtime provided \
 		--handler index.handler \
 		--role ${ROLE} \
@@ -145,12 +136,12 @@ cloud-init:
 
 cloud-patch:
 	@aws lambda update-function-code \
-	   --function-name ${ENV}-${APP} \
+	   --function-name ${STACK}-${APP} \
 	   --publish \
 	   --zip-file fileb://./${REL}
 
 cloud:
-	@aws lambda get-function --function-name ${ENV}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init
+	@aws lambda get-function --function-name ${STACK}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init
 
 
 #####################################################################

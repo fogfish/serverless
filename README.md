@@ -43,9 +43,11 @@ then, create a Makefile
 APP      = name-of-my-function
 
 ENV     ?= dev
-ROLE    ?= arn:aws:iam::000000000000:role/my-function-role
+STACK   ?= ${ENV}-stack
+ROLE    ?= arn:aws:iam::000000000000:role/${STACK}-role-function
 TIMEOUT ?= 30
 MEMORY  ?= 256
+CODE    ?= s3://packages/${STACK}
 
 include serverless.mk
 ```

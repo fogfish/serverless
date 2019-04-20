@@ -26,7 +26,14 @@ start_link(Lambda) ->
 init([Lambda]) ->
    Host = ?PROTOCOL ++ os:getenv("AWS_LAMBDA_RUNTIME_API", "127.0.0.1:8888") ++ ?VERSION,
    {ok, handle, 
-      spawn_link(fun() -> loop(lifecycle(Host, Lambda), #{}) end)
+      spawn_link(
+         fun() -> 
+            loop(
+               lifecycle(Host, Lambda),
+               #{so => []}               %% socket options (so) are mandatory 
+            )
+         end
+      )
    }.
 
 free(_, _) ->
