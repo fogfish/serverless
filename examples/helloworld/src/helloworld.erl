@@ -4,6 +4,7 @@
 %%
 %%
 main(_) ->
+   % io:format("==> ~p~n", [erlang:node()]).
    serverless:spawn(fun identity/1).
 
 %%
@@ -14,5 +15,8 @@ identity(Json) ->
    serverless:notice(#{spawn => helloworld}),
    serverless:notice(#{input => Json}),
 
-   {ok, #{helloworld => Json}}.
+   {ok, #{
+      node => typecast:s(erlang:node()),
+      helloworld => Json
+   }}.
 
