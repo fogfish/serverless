@@ -67,17 +67,19 @@ free(_, _) ->
 %%
 %%-----------------------------------------------------------------------------
 handle({T, Type, Pid, Msg}, _, #state{events = Events} = State) ->
-   {reply, ok,
-      State#state{
-         events = q:enq(
-            #{
-               message => message(Type, Pid, Msg), 
-               timestamp => milliseconds(T)
-            }, 
-            Events
-         )
-      }
-   };
+   io:fwrite(standard_error, message(Type, Pid, Msg)),
+   {reply, ok, State};
+   % {reply, ok,
+   %    State#state{
+   %       events = q:enq(
+   %          #{
+   %             message => message(Type, Pid, Msg), 
+   %             timestamp => milliseconds(T)
+   %          }, 
+   %          Events
+   %       )
+   %    }
+   % };
 
 handle(resume, _, #state{} = State) ->
    {reply, ok, State};
