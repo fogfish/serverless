@@ -3,7 +3,7 @@
 -compile({parse_transform, category}).
 -include_lib("datum/include/datum.hrl").
 
--export([log/3, log_/3, resume/0, suspend/0]).
+-export([log/3, log_/3]).
 -export([
    start_link/0,
    init/1,
@@ -24,12 +24,6 @@ log(Type, Pid, Msg) ->
 
 log_(Type, Pid, Msg) ->
    pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
-
-resume() ->
-   pipe:call(?MODULE, resume, infinity).
-
-suspend() ->
-   pipe:call(?MODULE, suspend, infinity).
 
 %%-----------------------------------------------------------------------------
 %%

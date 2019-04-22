@@ -56,7 +56,6 @@ loop(Lambda, State0) ->
    catch _:Reason ->
       serverless_logger:log(emergency, self(), Reason),
       serverless_logger:log(emergency, self(), erlang:get_stacktrace()),
-      suspend(),
       exit(Reason)
    end.
 
@@ -64,10 +63,8 @@ loop(Lambda, State0) ->
 lifecycle(Host, Lambda) ->
    [m_state ||
       Json <- queue(Host),
-      cats:unit( resume() ),
       cats:unit( exec(Lambda, Json) ),
-      finalise(Host, _),
-      cats:unit( suspend() )
+      finalise(Host, _)
    ].
 
 %%
@@ -132,11 +129,3 @@ exec(Lambda, {RequestId, Json}) ->
          serverless_logger:log(error, self(), Reason),
          {error, RequestId, Reason}
    end.
-
-%%
-resume() ->
-   serverless_logger:resume().
-
-%%
-suspend() ->
-   serverless_logger:suspend().
