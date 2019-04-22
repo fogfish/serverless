@@ -27,8 +27,8 @@ log(Type, Pid, Msg) ->
    pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
 
 log_(Type, Pid, Msg) ->
-   pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}).
-   % pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
+   % pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}).
+   pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
 resume() ->
    pipe:call(?MODULE, resume, infinity).
