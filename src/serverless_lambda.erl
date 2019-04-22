@@ -30,7 +30,13 @@ init([Lambda]) ->
          fun() -> 
             loop(
                lifecycle(Host, Lambda),
-               #{so => []}               %% socket options (so) are mandatory 
+               #{so => [
+                  %% socket options (so) are mandatory
+                  %% tune HTTP timeouts so that runtime api would not fail
+                  {checkout_timeout, infinity}
+               ,  {connect_timeout,  30000}
+               ,  {recv_timeout,     infinity}
+               ]}
             )
          end
       )
@@ -62,12 +68,9 @@ loop(Lambda, State0) ->
 %%
 lifecycle(Host, Lambda) ->
    [m_state ||
-      Json <- queue(Host),
-      cats:unit( serverless:info(#{action => exec }) ),
-      Result <- cats:unit( exec(Lambda, Json) ),
-      cats:unit( serverless:info(#{action => finalize }) ),
-      finalise(Host, Result),
-      cats:unit( serverless:info(#{action => done }) )
+      queue(Host),
+      cats:unit( exec(Lambda, _) ),
+      finalise(Host, _)
    ].
 
 %%
