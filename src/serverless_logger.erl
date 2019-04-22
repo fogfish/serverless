@@ -23,7 +23,8 @@ log(Type, Pid, Msg) ->
    pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
 
 log_(Type, Pid, Msg) ->
-   pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
+   pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
+   % pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
 %%-----------------------------------------------------------------------------
 %%
@@ -72,16 +73,16 @@ milliseconds({A, B, C}) ->
 message(Type, Pid, [H | _] = Msg)
  when is_integer(H) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~s", [Type, Pid, Msg])
+      io_lib:format("[~s] ~p: ~s~n", [Type, Pid, Msg])
    );
 
 message(Type, Pid, Msg)
  when is_map(Msg) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~s", [Type, Pid, jsx:encode(Msg)])
+      io_lib:format("[~s] ~p: ~s~n", [Type, Pid, jsx:encode(Msg)])
    );
 
 message(Type, Pid, Msg) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~p", [Type, Pid, Msg])
+      io_lib:format("[~s] ~p: ~p~n", [Type, Pid, Msg])
    ).
