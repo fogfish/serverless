@@ -63,8 +63,11 @@ loop(Lambda, State0) ->
 lifecycle(Host, Lambda) ->
    [m_state ||
       Json <- queue(Host),
-      cats:unit( exec(Lambda, Json) ),
-      finalise(Host, _)
+      cats:unit( serverless:info(#{action => exec }) ),
+      Result <- cats:unit( exec(Lambda, Json) ),
+      cats:unit( serverless:info(#{action => finalize }) ),
+      finalise(Host, Result),
+      cats:unit( serverless:info(#{action => done }) )
    ].
 
 %%
