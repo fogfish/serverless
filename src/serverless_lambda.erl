@@ -97,6 +97,16 @@ finalise(Host, {ok, RequestId, Json}) ->
       _ < 202
    ];
 
+finalise(Host, {error, RequestId, #{} = Reason}) ->
+   [m_http ||
+      _ > "POST " ++ Host ++ "/runtime/invocation/" ++ RequestId ++ "/error",
+      _ > "Content-Type: application/json",
+      _ > "Connection: keep-alive",
+      _ > Reason,
+
+      _ < 202
+   ];
+
 finalise(Host, {error, RequestId, Reason}) ->
    [m_http ||
       _ > "POST " ++ Host ++ "/runtime/invocation/" ++ RequestId ++ "/error",
@@ -115,8 +125,8 @@ exec(Lambda, {RequestId, Json}) ->
          case Lambda(Json) of
             {ok, Result} ->
                Self ! {ok, Result};
-            {error, Reason} = Error ->
-               serverless_logger:log(critical, self(), Error),
+            {error, Reason} ->
+               serverless_logger:log(critical, self(), Reason),
                Self ! {error, Reason};
             ok  ->
                {ok, undefined};
