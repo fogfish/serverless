@@ -12,4 +12,7 @@ all() ->
    ].
 
 hw(_) ->
-   serverless:mock(helloworld, #{}, #{helloworld => #{}}).
+   serverless:mock(helloworld, 
+      #{},
+      #{helloworld => #{}, node => <<"nonode@nohost">>}
+   ).

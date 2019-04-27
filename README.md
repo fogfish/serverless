@@ -5,9 +5,10 @@ Serverless support for Erlang applications.
 
 ## Inspiration
 
-Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [AWS Lambda Runtime Interface](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html).
+Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [AWS Lambda Runtime Interface](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html). The Erlang runtime is deployed as [AWS Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to your AWS account.
 
-The library uses [escript](http://erlang.org/doc/man/escript.html) executables to package, debug and deploy lambda functions.  
+The library uses [escript](http://erlang.org/doc/man/escript.html) executables to package, debug and deploy lambda functions.
+
 
 ## Getting started
 
@@ -22,6 +23,8 @@ Add the library as dependency to rebar.config
    }
 ]}.
 ```
+
+Please notice, you need to deploy Erlang runtime to AWS Lambda Layer, this operation has to be executed only once.
 
 ### Workflow
 
@@ -48,6 +51,8 @@ ROLE    ?= arn:aws:iam::000000000000:role/${STACK}-role-function
 TIMEOUT ?= 30
 MEMORY  ?= 256
 CODE    ?= s3://packages/${STACK}
+LAYER   ?= arn:aws:lambda:eu-west-1:000000000000:layer:erlang-serverless:1
+
 
 include serverless.mk
 ```
@@ -62,6 +67,16 @@ The command downloads a [docker images](https://github.com/fogfish/erlang-in-doc
 
 You project is ready for development.
 
+
+**Configure AWS Account (run only once)**
+
+Usage of [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) simplifies an experience of lambda development and deployment. A custom Erlang runtime is provisioned with layers feature. The library uses docker image `fogfish/erlang-serverless` to distribute a runtime compatible with AWS, images is managed by [erlang-in-docker](https://github.com/fogfish/erlang-in-docker).
+
+You have to deploy a layer to you account before you are able to run a function. The following command builds a zip archive with Erlang runtime and deploys it your AWS account. Run this command only once
+
+```
+make cloud
+```
 
 **Compile and Test**
 
@@ -99,7 +114,7 @@ serverless:mock(
 The workflow implements a simple commands to deploy or patch AWS a function. Watch out the AWS role configuration, we recommends to use AWS Cloud Formation templates for this. 
 
 ```bash
-make cloud
+make cloud-init
 ```
 
 Congratulations, your function is ready! 

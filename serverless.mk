@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.2.4
+## @version 0.3.0
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -32,8 +32,6 @@ EFLAGS = \
 	+P 1000000 \
 	+K true +A 160 -sbt ts
 
-BUILDER = FROM ${DOCKER}\nARG VERSION=\nCOPY _build/default/bin/${APP} /var/task/\nRUN cd /var/task && sed -i -e \"s/APP/${APP}/\" bootstrap && zip ${APP}-\x24{VERSION}.zip -r * > /dev/null
-
 
 #####################################################################
 ##
@@ -51,45 +49,36 @@ run:
 ##
 ## execute common test and terminate node
 test:
-	@./rebar3 ct --config=test/${TEST}.config --cover --verbose
+	@./rebar3 ct --config test/${TEST}.config --cover --verbose
 	@./rebar3 cover
-
-
-testclean:
-	@rm -f  _build/test.beam
-	@rm -f  _build/test.erl
-	@rm -f  test/*.beam
-	@rm -rf test.*-temp-data
-	@rm -rf tests
 
 ##
 ## clean 
-clean: testclean
+clean:
 	-@./rebar3 clean
-	@rm -Rf _build/builder
-	@rm -rf log
-	@rm -f  *.tar.gz
-	@rm -f  *.zip
-	@rm -f  *.bundle
-	-@rm -Rf _build/default/bin
+	-@rm -rf _build/builder
+	-@rm -rf _build/layer
+	-@rm -rf _build/*.zip
+	-@rm -rf log
+	-@rm -rf _build/default/bin
 
 ##
 ##
-dist: ${REL}
+dist: _build/default/bin/${REL}
 
-${REL}: _build/builder _build/default/bin/${APP}
-	docker build --file=$< --force-rm=true --build-arg="VERSION=${VSN}" --tag=build/${APP}:latest . ;\
-	I=`docker create build/${APP}:latest` ;\
-	docker cp $$I:/var/task/$@ $@ ;\
-	docker rm -f $$I ;\
-	docker rmi build/${APP}:latest ;\
-	test -f $@ && echo "==> tarball: $@"
+_build/default/bin/${REL}: _build/default/bin/${APP} _build/default/bin/bootstrap
+	@rm -f $@ ;\
+	cd _build/default/bin ;\
+	zip -j ${REL} * ;\
+	cd - ;\
+	echo "==> $@"
+
+_build/default/bin/bootstrap:
+	@echo "#!/bin/sh\nexport HOME=/opt\n/opt/serverless/bin/escript ${APP}\n" > $@ ;\
+	chmod ugo+x $@
 
 _build/default/bin/${APP}: src/*.erl src/*.app.src
 	@./rebar3 escriptize
-
-_build/builder:
-	@mkdir -p _build && echo "${BUILDER}" > $@
 
 ##
 ##
@@ -122,7 +111,7 @@ function:
 ##
 #####################################################################
 
-cloud-init:
+cloud-init: _build/default/bin/${REL}
 	@aws lambda create-function \
 		--function-name ${STACK}-${APP} \
 		--runtime provided \
@@ -130,18 +119,33 @@ cloud-init:
 		--role ${ROLE} \
 		--timeout ${TIMEOUT} \
 		--memory-size ${MEMORY} \
+		--layers "${LAYER}" \
 		--publish \
-		--zip-file fileb://./${REL} \
+		--zip-file fileb://$^ \
 		$$R
 
-cloud-patch:
+cloud-patch: _build/default/bin/${REL}
 	@aws lambda update-function-code \
 	   --function-name ${STACK}-${APP} \
 	   --publish \
-	   --zip-file fileb://./${REL}
+	   --zip-file fileb://$^
 
-cloud:
-	@aws lambda get-function --function-name ${STACK}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init
+##
+##
+cloud: _build/erlang-serverless.zip
+	@aws lambda publish-layer-version \
+		--layer-name erlang-serverless \
+		--description "${DOCKER}" \
+		--zip-file fileb://./$^
+
+_build/erlang-serverless.zip:
+	@echo "FROM ${DOCKER}\nRUN cd /opt && zip erlang-serverless.zip -r * > /dev/null" > _build/layer ;\
+	docker build --force-rm=true --tag=build/erlang-serverless:latest - < _build/layer ;\
+	I=`docker create build/erlang-serverless:latest` ;\
+	docker cp $$I:/opt/erlang-serverless.zip $@ ;\
+	docker rm -f $$I ;\
+	docker rmi build/erlang-serverless:latest ;\
+	test -f $@ && echo "==> $@"
 
 
 #####################################################################
