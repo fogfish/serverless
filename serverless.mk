@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.3.0
+## @version 0.3.1
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -82,8 +82,8 @@ _build/default/bin/${APP}: src/*.erl src/*.app.src
 
 ##
 ##
-publish: ${REL}
-	aws s3 cp ${REL} ${CODE}/${APP}.zip
+publish: _build/default/bin/${REL}
+	aws s3 cp _build/default/bin/${REL} ${CODE}/${APP}.zip
 
 ##
 ##
