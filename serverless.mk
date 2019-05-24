@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.3.1
+## @version 0.4.0
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -38,12 +38,15 @@ EFLAGS = \
 ## build
 ##
 #####################################################################
-all: rebar3 compile test
+all: rebar3 test
 
 compile: rebar3
 	@./rebar3 compile
 
-run: 
+run: _build/default/bin/${APP}
+	$^ -f ${EVENT}
+
+shell:
 	@erl ${EFLAGS}
 
 ##
@@ -111,24 +114,35 @@ function:
 ##
 #####################################################################
 
+config:
+	@mkdir -p cloud/${ENV}
+	@aws lambda create-function --generate-cli-skeleton | \
+	jq '.FunctionName = "${STACK}-${APP}" | .Runtime = "provided" | .Handler = "index.handler"' > cloud/${ENV}/config.json
+	@aws lambda create-event-source-mapping --generate-cli-skeleton | \
+	jq '.FunctionName = "${STACK}-${APP}"' > cloud/${ENV}/source.json
+
+
 cloud-init: _build/default/bin/${REL}
 	@aws lambda create-function \
-		--function-name ${STACK}-${APP} \
-		--runtime provided \
-		--handler index.handler \
-		--role ${ROLE} \
-		--timeout ${TIMEOUT} \
-		--memory-size ${MEMORY} \
-		--layers "${LAYER}" \
-		--publish \
-		--zip-file fileb://$^ \
-		$$R
+		--cli-input-json fileb://cloud/${ENV}/config.json \
+		--zip-file fileb://$^
+	@aws logs create-log-group \
+		--log-group-name /aws/lambda/${STACK}-${APP}
+	@aws logs put-retention-policy \
+		--log-group-name /aws/lambda/${STACK}-${APP} \
+		--retention-in-days ${LOGS_TTL}
+	@test -f cloud/${ENV}/source.json && aws lambda create-event-source-mapping || : \
+		--cli-input-json fileb://cloud/${ENV}/source.json
 
 cloud-patch: _build/default/bin/${REL}
 	@aws lambda update-function-code \
 	   --function-name ${STACK}-${APP} \
 	   --publish \
 	   --zip-file fileb://$^
+
+cloud-free:
+	@aws lambda delete-function --function-name ${STACK}-${APP}
+	@aws logs delete-log-group --log-group-name /aws/lambda/${STACK}-${APP}
 
 ##
 ##

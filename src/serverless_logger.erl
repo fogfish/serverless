@@ -3,7 +3,7 @@
 -compile({parse_transform, category}).
 -include_lib("datum/include/datum.hrl").
 
--export([log/3, log_/3]).
+-export([log/3]).
 -export([
    start_link/0,
    init/1,
@@ -12,7 +12,7 @@
 ]).
 
 %%
--record(state, {}).
+-record(state, {crlf}).
 
 %%-----------------------------------------------------------------------------
 %%
@@ -21,10 +21,6 @@
 %%-----------------------------------------------------------------------------
 log(Type, Pid, Msg) ->
    pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
-
-log_(Type, Pid, Msg) ->
-   pipe:call(?MODULE, {os:timestamp(), Type, Pid, Msg}, infinity).
-   % pipe:send(?MODULE, {os:timestamp(), Type, Pid, Msg}).
 
 %%-----------------------------------------------------------------------------
 %%
@@ -38,7 +34,11 @@ init(_) ->
    [either ||
       cats:unit( erlang:process_flag(trap_exit, true) ),
       serverless_logger_std:start(),
-      cats:unit(handle, #state{})
+      cats:unit(handle, 
+         #state{
+            crlf = application:get_env(serverless, crlf, <<$\r>>)
+         }
+      )
    ].
 
 free(_, _) ->
@@ -49,8 +49,8 @@ free(_, _) ->
 %% state machine
 %%
 %%-----------------------------------------------------------------------------
-handle({T, Type, Pid, Msg}, _, #state{} = State) ->
-   io:fwrite(standard_error, message(Type, Pid, Msg), []),
+handle({_T, Type, Pid, Msg}, _, #state{crlf = CRLF} = State) ->
+   io:fwrite(standard_error, message(Type, Pid, Msg, CRLF), []),
    {reply, ok, State};
 
 handle(resume, _, #state{} = State) ->
@@ -66,23 +66,24 @@ handle(suspend, _, #state{} = State) ->
 %%-----------------------------------------------------------------------------
 
 %%
-milliseconds({A, B, C}) ->
-   (A * 1000000 + B) * 1000 + erlang:trunc(C / 1000).
+message(_Type, _Pid, $-, CRLF) ->
+   <<CRLF/binary, "-----------------------------------------------------------------------------", CRLF/binary, CRLF/binary>>;
 
-%%
-message(Type, Pid, [H | _] = Msg)
+message(Type, Pid, [H | _] = Msg, CRLF)
  when is_integer(H) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~s~n", [Type, Pid, Msg])
+      io_lib:format("[~s] ~p: ~s~s", [Type, Pid, Msg, CRLF])
    );
 
-message(Type, Pid, Msg)
+message(Type, Pid, Msg, CRLF)
  when is_map(Msg) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~s~n", [Type, Pid, jsx:encode(Msg)])
+      io_lib:format("[~s] ~p:~s~s~n", [Type, Pid, CRLF, 
+         jsx:format(jsx:encode(Msg), [space, {indent, 2}, {newline, CRLF}])
+      ])
    );
 
-message(Type, Pid, Msg) ->
+message(Type, Pid, Msg, CRLF) ->
    erlang:iolist_to_binary(
-      io_lib:format("[~s] ~p: ~p~n", [Type, Pid, Msg])
+      io_lib:format("[~s] ~p: ~p~s", [Type, Pid, Msg, CRLF])
    ).

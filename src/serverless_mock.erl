@@ -14,14 +14,14 @@ test(Lambda, Mock, Expect) ->
    meck:new(serverless, [passthrough]),
    meck:new(serverless_logger, [passthrough]),
 
-   meck:expect(serverless_logger, log_,
+   meck:expect(serverless_logger, log,
       fun(Type, Pid, Msg) ->
          ct:pal("[~s]: ~p ~p", [Type, Pid, Msg])
       end
    ),
 
    meck:expect(serverless, spawn,
-      fun(Fun) ->
+      fun(Fun, _) ->
          case (catch Fun(Mock)) of
             {ok, Expect} ->
                ok;

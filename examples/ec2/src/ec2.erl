@@ -5,8 +5,8 @@
 
 %%
 %%
-main(_) ->
-   serverless:spawn(fun ec2/1).
+main(Opts) ->
+   serverless:spawn(fun ec2/1, Opts).
 
 %%
 %%

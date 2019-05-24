@@ -1,0 +1,8 @@
+{
+  "EventSourceArn": "arn:aws:kinesis:eu-west-1:000000000000:stream/my-stream",
+  "FunctionName": "dev-stack-ec2",
+  "Enabled": true,
+  "BatchSize": 1,
+  "StartingPosition": "LATEST",
+  "StartingPositionTimestamp": "1970-01-01T00:00:00"
+}
