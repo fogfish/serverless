@@ -1,6 +1,6 @@
 # serverless
 
-Serverless support for Erlang applications, bootstrap your development on AWS Lambda. 
+Serverless Erlang runtime for AWS Lambda Service, widen horizon of Erlang applications.
 
 
 ## Inspiration
