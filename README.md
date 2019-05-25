@@ -1,6 +1,6 @@
 # serverless
 
-Serverless support for Erlang applications.
+Serverless support for Erlang applications, bootstrap your development on AWS Lambda. 
 
 
 ## Inspiration
@@ -8,6 +8,14 @@ Serverless support for Erlang applications.
 Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [AWS Lambda Runtime Interface](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html). The Erlang runtime is deployed as [AWS Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to your AWS account.
 
 The library uses [escript](http://erlang.org/doc/man/escript.html) executables to package, debug and deploy lambda functions.
+
+
+## Key features
+
+* Implements Erlang runtime for AWS Lambda service.
+* Deploys Erlang\OTP as AWS Lambda Layer.
+* Defines a lambda's life-cycle workflow.
+* Provides command line tools to orchestrate local development and production deployments.
 
 
 ## Getting started
@@ -24,38 +32,69 @@ Add the library as dependency to rebar.config
 ]}.
 ```
 
-Please notice, you need to deploy Erlang runtime to AWS Lambda Layer, this operation has to be executed only once.
+The easiest way to start with Erlang serverless function development is a template provided by [serverless.mk](serverless.mk). Please look on [hello world](examples/helloworld) example as a play ground to get things up and running.
+
 
 ### Workflow
 
-The library defines a workflow of distribution Erlang application from sources to the cloud. The workflow builds a distribution package of Erlang application using rebar3 with help of Makefile orchestration. The file [serverless.mk](serverless.mk) implements the workflow
+The library defines a life-cycle workflow to distribute Erlang application from sources to the cloud - [AWS Lambda service](https://aws.amazon.com/lambda/). The workflow builds a distribution package of Erlang application using rebar3 with help of Makefile orchestration. The file [serverless.mk](serverless.mk) implements the workflow:
 
-**New function**
+1. [Configure AWS account](#configure-aws-account). 
+2. [Create a new function](#create-new-function).
+3. [Build function](#build-function)
+4. [Run function locally](#run-function-locally)
+5. [Package function](#package-function)
+6. [Deploy function](#deploy-function)
+7. [Clean up](#clean-up)
 
-The easiest way to start with Erlang serverless function is a template provided by [serverless.mk](serverless.mk). 
 
-Create a new folder for your function and download the workflow orchestration file. 
+### Configure AWS account
+
+Usage of [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) simplifies an experience of lambda development and deployment. A custom Erlang runtime is provisioned with layers feature. The library uses docker image `fogfish/erlang-serverless` to distribute a runtime compatible with AWS Lambda service, images is managed by [erlang-in-docker](https://github.com/fogfish/erlang-in-docker).
+
+You have to deploy a layer to you account before you'll be able to run any function. The following command builds a zip archive with Erlang runtime and deploys it your AWS account. Please notice, this operation has to be executed only once per AWS Account.
+
+```
+cd examples/helloworld
+
+make layer
+```
+
+
+### Create a new function
+
+The easiest way to start with Erlang serverless function development is a template provided by [serverless.mk](serverless.mk). Create a new folder for your function and download the workflow orchestration file. 
 
 ```bash
+mkdir myfun && cd myfun
+
 curl -O -L https://raw.githubusercontent.com/fogfish/serverless/master/serverless.mk
-``` 
+```
 
 then, create a Makefile
 
-```Makefile
-APP      = name-of-my-function
+```bash
+cat > Makefile <<EOF
+APP       = name_of_my_function
 
-ENV     ?= dev
-STACK   ?= ${ENV}-stack
-ROLE    ?= arn:aws:iam::000000000000:role/${STACK}-role-function
-TIMEOUT ?= 30
-MEMORY  ?= 256
-CODE    ?= s3://packages/${STACK}
-LAYER   ?= arn:aws:lambda:eu-west-1:000000000000:layer:erlang-serverless:1
-
+ENV      ?= dev
+SERVICE  ?= \${ENV}-stack
+LOGS_TTL ?= 5
+BUCKET   ?= s3://packages/\${SERVICE}
+EVENT    ?= test/event.json
 
 include serverless.mk
+EOF
 ```
+
+The Makefile contains few configuration variables, they streamlines the deployment process
+
+* `ENV` identity of deployment environment. This configuration variable supports managing a multi-environment serverless architecture in AWS using multi-stack approach (one stack per environment). A usual pipelines contains at least two different environments: development and production.
+* `SERVICE` is used to prefix a function name during deployment processes.
+* `LOGS_TTL` tile-to-live/retention period of lambda log streams.
+* `BUCKET` identity of AWS S3 bucket to store lambda's artifacts.
+* `EVENT` a default mock event used by local execution
+
 
 Use build-in template to generate empty function
 
@@ -63,43 +102,44 @@ Use build-in template to generate empty function
 make function
 ```
 
-The command downloads a [docker images](https://github.com/fogfish/erlang-in-docker) with serverless runtime, creates a source code of identity function, empty test suites and rebar config files. 
+The command downloads a [docker images](https://github.com/fogfish/erlang-in-docker) with serverless runtime, creates a source code of identity function, empty test suites, rebar config files and initializes deployment configurations. As the result, the following folder structure is created
+
+```
++
++- cloud                           // cloud deployment configurations
+|  +- dev                          // development environment
+|  |  +- config.json               // lambda configurations (see aws lambda create-function)
+|  |  +- source.json               // lambda source mappings (see aws lambda create-event-source-mapping)
+| ...            
++- src                             // source code of lambda function
+|  +- name-of-my-function.app.src
+|  +- name-of-my-function.erl
++- test                            // tests of lambda function
+|  +- event.json                   // specification of default event
+|  |
+| ...
++- rebar.config
+```
 
 You project is ready for development.
 
 
-**Configure AWS Account (run only once)**
+### Build function
 
-Usage of [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) simplifies an experience of lambda development and deployment. A custom Erlang runtime is provisioned with layers feature. The library uses docker image `fogfish/erlang-serverless` to distribute a runtime compatible with AWS, images is managed by [erlang-in-docker](https://github.com/fogfish/erlang-in-docker).
-
-You have to deploy a layer to you account before you are able to run a function. The following command builds a zip archive with Erlang runtime and deploys it your AWS account. Run this command only once
-
-```
-make cloud
-```
-
-**Compile and Test**
-
-The easiest way to compile and test the application is the default Makefile target. You can also invoke compile and test targets sequentially.
+Use default Makefile target to compile and test the application. Serverless library promotes a [Erlang Common Tests](http://erlang.org/doc/apps/common_test/introduction.html) for automated testing.
 
 ```bash
 make
 ```
 
-**Make release**
-
-Use **dist** target to assemble an escript executable containing the project's and its dependencies' BEAM files. This command also build a zip package containing Erlang runtime and executables of your function 
+You can also invoke compile and test targets sequentially.
 
 ```bash
-make dist
+make compile
+make test
 ```
 
-As the result, it produces `name-of-my-function-{version}.zip` package and `_build/default/bin/name-of-my-function` executables. Note, the version is deducted from latest git tag.
-
-
-**Test function**
-
-Easiest wait to test a function with `serverless:mock` that mock a Lambda Runtime API.  
+The library provides a Lambda Runtime API mock `serverless:mock`, use to test your code.
 
 ```erlang
 serverless:mock(
@@ -109,26 +149,99 @@ serverless:mock(
 ).
 ```
 
-**Deploy function**
 
-The workflow implements a simple commands to deploy or patch AWS a function. Watch out the AWS role configuration, we recommends to use AWS Cloud Formation templates for this. 
+### Run function locally
+
+Runs your Amazon Lambda function locally. It passes content of `test/event.json` as Amazon Lambda event object.
 
 ```bash
-make cloud-init
+make run
 ```
 
-Congratulations, your function is ready! 
+Use `EVENT` variable to pass non default event
+
+```bash
+make run EVENT=test/kinesis.json
+```
+
+
+### Package function
+
+Use **dist** target to assemble an escript executable containing the project's and its dependencies' BEAM files. This command also build a zip package containing executables of your function 
+
+```bash
+make dist
+```
+
+As the result, it produces `name-of-my-function-{version}.zip` package and `_build/default/bin/name-of-my-function` executables. Note, the version is deducted from latest git tag.
+
+Please note you might need to explicitly package lambda to zip bundle if your are deploying it via AWS S3. Use **publish** target and `BUCKET` variable
+
+```bash
+make publish
+```
+
+
+### Deploy function
+
+The workflow implements a target **deploy** to orchestrate deployment with help of [aws command line](https://aws.amazon.com/cli/).
+
+To deploy a function, you need a configuration of target environment. This configuration contains reference to an execution role, lambda layer and other. The configuration format and parameters are 100% compatible with [aws lambda create-function](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-function.html), please refers to official AWS documentation.
+
+The serverless library manages environment configurations at `cloud` folder. A minimal configuration requires following arguments at `cloud/${ENV}/config.json`:
+
+```json
+{
+  "FunctionName": "name_of_my_function",
+  "Runtime": "provided",
+  "Role": "arn:aws:iam::000000000000:role/my-role-function",
+  "Handler": "index.handler",
+  "Timeout": 10,
+  "MemorySize": 256,
+  "Publish": true,
+  "Layers": [
+    "arn:aws:lambda:eu-west-1:000000000000:layer:erlang-serverless:1"
+  ]
+}
+```
+
+Optionally, the lambda function can be associated with event sources(s) using [aws lambda create-event-source-mapping](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-event-source-mapping.html). Sources are specified at `cloud/${ENV}/source.json`, trash this file if you need to skip an association with event sources. 
+
+After the configuration is completed, deploy it
+
+```bash
+make deploy
+```
+
+Use the `ENV` variable to deploy to specific environment
+
+```bash
+make deploy ENV=live
+```
+
+Congratulations, your function is production ready!
+
+
+### Clean up
+
+A few targets are supported:
+
+* **cloud-free** remove lambda deployment(s) at specified environment.
+* **clean** build artifacts.
+* **distclean** clean up everything except source code.
 
 
 ## How To Contribute
 
 The library is Apache 2.0 licensed and accepts contributions via GitHub pull requests:
 
-* Fork the repository on GitHub
-* Read build instructions
-* Make a pull request
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Added some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
 
-The build process requires [Erlang/OTP](http://www.erlang.org/downloads) version 20.0 or later and essential build tools.
+The development requires [Erlang/OTP](http://www.erlang.org/downloads) version 20.0 or later and essential build tools.
 
 ### commit message
 
@@ -156,7 +269,6 @@ If you experience any issues with the library, please let us know via [GitHub is
 * **Attach** logs, screenshots and exceptions, in possible.
 
 * **Reveal** the steps you took to reproduce the problem, include code snippet or links to your project.
-
 
 
 ## License

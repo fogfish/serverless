@@ -8,11 +8,11 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.4.0
+## @version 0.5.0
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
-VSN    ?= $(shell test -z "`git status --porcelain`" && git describe --tags --long | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags`-a")
+VSN    ?= $(shell test -z "`git status --porcelain 2> /dev/null`" && git describe --tags --long 2> /dev/null | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags 2> /dev/null`-a")
 TEST   ?= tests
 REBAR  ?= 3.9.1
 REL    ?= ${APP}-${VSN}.zip
@@ -31,7 +31,6 @@ EFLAGS = \
 	-kernel inet_dist_listen_max 32199 \
 	+P 1000000 \
 	+K true +A 160 -sbt ts
-
 
 #####################################################################
 ##
@@ -86,7 +85,7 @@ _build/default/bin/${APP}: src/*.erl src/*.app.src
 ##
 ##
 publish: _build/default/bin/${REL}
-	aws s3 cp _build/default/bin/${REL} ${CODE}/${APP}.zip
+	aws s3 cp _build/default/bin/${REL} ${BUCKET}/${APP}.zip
 
 ##
 ##
@@ -96,7 +95,7 @@ distclean: clean
 
 
 function:
-	I=`docker create ${DOCKER}` ;\
+	@I=`docker create ${DOCKER}` ;\
 	docker cp $$I:/function/src . ;\
 	docker cp $$I:/function/test . ;\
 	docker cp $$I:/function/rebar.config . ;\
@@ -105,7 +104,9 @@ function:
 	sed -i '' -e "s/APP/${APP}/" test/* ;\
 	sed -i '' -e "s/APP/${APP}/g" rebar.config ;\
 	mv src/app.app.src src/${APP}.app.src ;\
-	mv src/app.erl src/${APP}.erl
+	mv src/app.erl src/${APP}.erl ;\
+	mv test/app_SUITE.erl test/${APP}_SUITE.erl ;\
+	make config
 
 
 #####################################################################
@@ -116,10 +117,15 @@ function:
 
 config:
 	@mkdir -p cloud/${ENV}
+	@mkdir -p test
 	@aws lambda create-function --generate-cli-skeleton | \
-	jq '.FunctionName = "${STACK}-${APP}" | .Runtime = "provided" | .Handler = "index.handler"' > cloud/${ENV}/config.json
+	jq '.FunctionName = "${SERVICE}-${APP}" | .Runtime = "provided" | .Handler = "index.handler"' > cloud/${ENV}/config.json
 	@aws lambda create-event-source-mapping --generate-cli-skeleton | \
-	jq '.FunctionName = "${STACK}-${APP}"' > cloud/${ENV}/source.json
+	jq '.FunctionName = "${SERVICE}-${APP}"' > cloud/${ENV}/source.json
+	@echo "{}" > ${EVENT}
+
+deploy: _build/default/bin/${REL}
+	@aws lambda get-function --function-name ${SERVICE}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init || echo "No updates"
 
 
 cloud-init: _build/default/bin/${REL}
@@ -127,33 +133,34 @@ cloud-init: _build/default/bin/${REL}
 		--cli-input-json fileb://cloud/${ENV}/config.json \
 		--zip-file fileb://$^
 	@aws logs create-log-group \
-		--log-group-name /aws/lambda/${STACK}-${APP}
+		--log-group-name /aws/lambda/${SERVICE}-${APP}
 	@aws logs put-retention-policy \
-		--log-group-name /aws/lambda/${STACK}-${APP} \
+		--log-group-name /aws/lambda/${SERVICE}-${APP} \
 		--retention-in-days ${LOGS_TTL}
 	@test -f cloud/${ENV}/source.json && aws lambda create-event-source-mapping || : \
 		--cli-input-json fileb://cloud/${ENV}/source.json
 
 cloud-patch: _build/default/bin/${REL}
 	@aws lambda update-function-code \
-	   --function-name ${STACK}-${APP} \
+	   --function-name ${SERVICE}-${APP} \
 	   --publish \
 	   --zip-file fileb://$^
 
 cloud-free:
-	@aws lambda delete-function --function-name ${STACK}-${APP}
-	@aws logs delete-log-group --log-group-name /aws/lambda/${STACK}-${APP}
+	@aws lambda delete-function --function-name ${SERVICE}-${APP}
+	@aws logs delete-log-group --log-group-name /aws/lambda/${SERVICE}-${APP}
 
 ##
 ##
-cloud: _build/erlang-serverless.zip
+layer: _build/erlang-serverless.zip
 	@aws lambda publish-layer-version \
 		--layer-name erlang-serverless \
 		--description "${DOCKER}" \
 		--zip-file fileb://./$^
 
 _build/erlang-serverless.zip:
-	@echo "FROM ${DOCKER}\nRUN cd /opt && zip erlang-serverless.zip -r * > /dev/null" > _build/layer ;\
+	@mkdir -p _build ;\
+	echo "FROM ${DOCKER}\nRUN cd /opt && zip erlang-serverless.zip -r * > /dev/null" > _build/layer ;\
 	docker build --force-rm=true --tag=build/erlang-serverless:latest - < _build/layer ;\
 	I=`docker create build/erlang-serverless:latest` ;\
 	docker cp $$I:/opt/erlang-serverless.zip $@ ;\
