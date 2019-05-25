@@ -125,7 +125,7 @@ config:
 	@echo "{}" > ${EVENT}
 
 deploy: _build/default/bin/${REL}
-	@aws lambda get-function --function-name ${SERVICE}-${APP} > /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init || echo "No updates"
+	@aws lambda get-function --function-name ${SERVICE}-${APP} 2> /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init || echo "No updates"
 
 
 cloud-init: _build/default/bin/${REL}

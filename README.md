@@ -40,7 +40,7 @@ The easiest way to start with Erlang serverless function development is a templa
 The library defines a life-cycle workflow to distribute Erlang application from sources to the cloud - [AWS Lambda service](https://aws.amazon.com/lambda/). The workflow builds a distribution package of Erlang application using rebar3 with help of Makefile orchestration. The file [serverless.mk](serverless.mk) implements the workflow:
 
 1. [Configure AWS account](#configure-aws-account). 
-2. [Create a new function](#create-new-function).
+2. [Create a new function](#create-a-new-function).
 3. [Build function](#build-function)
 4. [Run function locally](#run-function-locally)
 5. [Package function](#package-function)
@@ -50,7 +50,7 @@ The library defines a life-cycle workflow to distribute Erlang application from 
 
 ### Configure AWS account
 
-Usage of [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) simplifies an experience of lambda development and deployment. A custom Erlang runtime is provisioned with layers feature. The library uses docker image `fogfish/erlang-serverless` to distribute a runtime compatible with AWS Lambda service, images is managed by [erlang-in-docker](https://github.com/fogfish/erlang-in-docker).
+Usage of [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) simplifies an experience of lambda development and deployment. A custom Erlang runtime is provisioned with layers feature. The library uses docker image `fogfish/erlang-serverless` to distribute a runtime compatible with AWS Lambda service, the image is managed by [erlang-in-docker](https://github.com/fogfish/erlang-in-docker).
 
 You have to deploy a layer to you account before you'll be able to run any function. The following command builds a zip archive with Erlang runtime and deploys it your AWS account. Please notice, this operation has to be executed only once per AWS Account.
 
@@ -90,7 +90,7 @@ EOF
 The Makefile contains few configuration variables, they streamlines the deployment process
 
 * `ENV` identity of deployment environment. This configuration variable supports managing a multi-environment serverless architecture in AWS using multi-stack approach (one stack per environment). A usual pipelines contains at least two different environments: development and production.
-* `SERVICE` is used to prefix a function name during deployment processes.
+* `SERVICE` is used to prefix a function name during deployment processes. This one allows to build a flexible deployment approaches of your architectures.
 * `LOGS_TTL` tile-to-live/retention period of lambda log streams.
 * `BUCKET` identity of AWS S3 bucket to store lambda's artifacts.
 * `EVENT` a default mock event used by local execution
@@ -107,7 +107,7 @@ The command downloads a [docker images](https://github.com/fogfish/erlang-in-doc
 ```
 +
 +- cloud                           // cloud deployment configurations
-|  +- dev                          // development environment
+|  +- dev                          // sandbox of development environment configurations
 |  |  +- config.json               // lambda configurations (see aws lambda create-function)
 |  |  +- source.json               // lambda source mappings (see aws lambda create-event-source-mapping)
 | ...            
@@ -115,7 +115,7 @@ The command downloads a [docker images](https://github.com/fogfish/erlang-in-doc
 |  +- name-of-my-function.app.src
 |  +- name-of-my-function.erl
 +- test                            // tests of lambda function
-|  +- event.json                   // specification of default event
+|  +- event.json                   // specification of default event mock
 |  |
 | ...
 +- rebar.config
@@ -192,7 +192,7 @@ The serverless library manages environment configurations at `cloud` folder. A m
 
 ```json
 {
-  "FunctionName": "name_of_my_function",
+  "FunctionName": "dev-stack-name_of_my_function",
   "Runtime": "provided",
   "Role": "arn:aws:iam::000000000000:role/my-role-function",
   "Handler": "index.handler",
@@ -219,7 +219,7 @@ Use the `ENV` variable to deploy to specific environment
 make deploy ENV=live
 ```
 
-Congratulations, your function is production ready!
+**Congratulations, your function is production ready!**
 
 
 ### Clean up
