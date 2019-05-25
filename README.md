@@ -233,7 +233,7 @@ A few targets are supported:
 
 ## How To Contribute
 
-The library is Apache 2.0 licensed and accepts contributions via GitHub pull requests:
+The library is [MIT](https://en.wikipedia.org/wiki/MIT_License) licensed and accepts contributions via GitHub pull requests:
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)

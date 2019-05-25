@@ -3,7 +3,7 @@
 ##
 ## This Makefile may be modified and distributed under the terms
 ## of the MIT license.  See the LICENSE file for details.
-## https://github.com/fogfish/makefile
+## https://github.com/fogfish/serverless
 ##
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
