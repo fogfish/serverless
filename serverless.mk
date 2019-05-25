@@ -46,7 +46,7 @@ run: _build/default/bin/${APP}
 	@test -z ${JSON} \
 		&& $^ -f ${EVENT} \
 		|| T=`mktemp /tmp/lambda.XXXXXXX` ; trap "{ rm -f $$T; }" EXIT ;\
-			jq -n --argjson json `cat ${JSON} | jq 'tostring'` -f ${EVENT} > $$T | $^ -f $$T
+			jq -n --arg json "`cat ${JSON}`" -f ${EVENT} > $$T | $^ -f $$T
 
 shell:
 	@erl ${EFLAGS}
