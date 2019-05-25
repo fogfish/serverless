@@ -158,12 +158,34 @@ Runs your Amazon Lambda function locally. It passes content of `test/event.json`
 make run
 ```
 
-Use `EVENT` variable to pass non default event
+Use `EVENT` variable to pass other than default event
 
 ```bash
 make run EVENT=test/kinesis.json
 ```
 
+Often, AWS Lambda Event contains in-line JSON as string (e.g. Gateway API, Kinesis, etc). Maintainability of such content for mock purposes is tedious. You can use template feature to maintain event metadata and payload in different files.
+
+```json
+// test/event.json
+{
+  "path": "/test/hello",
+  "headers": { ... },
+  "body": $json
+}
+
+// test/payload.json
+{
+  "foo": "bar",
+  "boo": "baa"
+}
+```
+
+Then use `JSON` variable to bind content of `$json` variable to a file
+
+```bash
+make run JSON=test/payload.json
+```
 
 ### Package function
 
