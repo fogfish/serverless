@@ -227,7 +227,10 @@ The serverless library manages environment configurations at `cloud` folder. A m
 }
 ```
 
-Optionally, the lambda function can be associated with event sources(s) using [aws lambda create-event-source-mapping](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-event-source-mapping.html). Sources are specified at `cloud/${ENV}/source.json`, trash this file if you need to skip an association with event sources. 
+Optionally, the lambda function can be associated with event sources(s) using [aws lambda create-event-source-mapping](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-event-source-mapping.html) Sources are specified at `cloud/${ENV}/source.json`, trash this file if you need to skip an association with event sources.
+
+Optionally, you can give a permission to executed the lambda function using [aws lambda add-permission](https://docs.aws.amazon.com/cli/latest/reference/lambda/add-permission.html) Permissions are specified at `cloud/${ENV}/permission.json`, trash this file if you need to skip a permission grant.
+
 
 After the configuration is completed, deploy it
 
@@ -295,10 +298,4 @@ If you experience any issues with the library, please let us know via [GitHub is
 
 ## License
 
-Copyright 2018 Dmitry Kolesnikov
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+[![See LICENSE](https://img.shields.io/github/license/fogfish/serverless.svg?style=for-the-badge)](LICENSE)

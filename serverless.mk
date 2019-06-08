@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.5.0
+## @version 0.5.1
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -125,6 +125,8 @@ config:
 	jq '.FunctionName = "${SERVICE}-${APP}" | .Runtime = "provided" | .Handler = "index.handler"' > cloud/${ENV}/config.json
 	@aws lambda create-event-source-mapping --generate-cli-skeleton | \
 	jq '.FunctionName = "${SERVICE}-${APP}"' > cloud/${ENV}/source.json
+	@aws lambda add-permission --generate-cli-skeleton | \
+	jq '.FunctionName = "${SERVICE}-${APP}"' > cloud/${ENV}/permission.json
 	@echo "{}" > ${EVENT}
 
 deploy: _build/default/bin/${REL}
@@ -140,8 +142,9 @@ cloud-init: _build/default/bin/${REL}
 	@aws logs put-retention-policy \
 		--log-group-name /aws/lambda/${SERVICE}-${APP} \
 		--retention-in-days ${LOGS_TTL}
-	@test -f cloud/${ENV}/source.json && aws lambda create-event-source-mapping || : \
-		--cli-input-json fileb://cloud/${ENV}/source.json
+	@test -f cloud/${ENV}/source.json && aws lambda create-event-source-mapping --cli-input-json fileb://cloud/${ENV}/source.json || :
+	@test -f cloud/${ENV}/permission.json && aws lambda add-permission --cli-input-json fileb://cloud/${ENV}/permission.json || :
+		
 
 cloud-patch: _build/default/bin/${REL}
 	@aws lambda update-function-code \
