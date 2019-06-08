@@ -12,7 +12,7 @@ return({error, Reason}) ->
    {Code, _} = Error = error_code(Reason),
    return({Code, error_json(Error, Reason)});
 
-return({Code, Json}) when is_map(Json) ->
+return({Code, Json}) when is_map(Json) orelse is_list(Json) ->
    return({Code, jsx:encode(Json)});
 
 return({Code, Text}) when is_binary(Text) ->
@@ -24,7 +24,7 @@ return({Code, Text}) when is_binary(Text) ->
       }
    };
 
-return({Code, Head, Json}) when is_map(Json) ->
+return({Code, Head, Json}) when is_map(Json) orelse is_list(Json) ->
    return({Code, Head, jsx:encode(Json)});
 
 return({Code, Head, Text}) when is_binary(Text) ->
