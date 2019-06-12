@@ -43,6 +43,8 @@ return({Code, Head, Text}) when is_binary(Text) ->
    
 return_code({Code, _}) ->
    Code;
+return_code(Code) when is_tuple(Code) ->
+   erlang:element(1,  status_code(erlang:element(1, Code)));
 return_code(Code) ->
    erlang:element(1,  status_code(Code)).
 
