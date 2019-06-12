@@ -50,8 +50,12 @@ return_code(Code) ->
 
 %%
 %%
-error_code({Reason, _}) -> status_code(Reason);
-error_code(Reason) -> status_code(Reason).
+error_code({Reason, _}) ->
+   status_code(Reason);
+error_code(Code) when is_tuple(Code) ->
+   status_code(erlang:element(1, Code));
+error_code(Reason) ->
+   status_code(Reason).
 
 error_json({Code, Text}, Reason) ->
    #{
