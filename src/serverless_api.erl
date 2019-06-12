@@ -10,6 +10,11 @@
 %%
 return({error, Reason}) ->
    {Code, _} = Error = error_code(Reason),
+   serverless:error(#{
+      api    => error,
+      reason => Reason,
+      status => Code
+   }),
    return({Code, error_json(Error, Reason)});
 
 return({Code, Json}) when is_map(Json) orelse is_list(Json) ->
