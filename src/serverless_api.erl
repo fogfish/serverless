@@ -154,6 +154,7 @@ status_code(bad_mime_type) -> status_code(415);
 %status(416) -> <<"416 Requested Range Not Satisfiable">>;
 %status(417) -> <<"417 Expectation Failed">>;
 %status(422) -> <<"422 Unprocessable Entity">>;
+status_code(required) -> status_code(500);
 status_code(not_implemented) -> status_code(501);
 %status(502) -> <<"502 Bad Gateway">>;
 status_code(not_available) -> status_code(503);
