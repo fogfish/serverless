@@ -90,6 +90,11 @@ message(Type, Pid, Msg, CRLF)
       ])
    );
 
+message(Type, Pid, Msg, CRLF)
+ when is_binary(Msg) ->
+   erlang:iolist_to_binary(
+      io_lib:format("[~s] ~p: ~s~s", [Type, Pid, Msg, CRLF])
+   );
 message(Type, Pid, Msg, CRLF) ->
    erlang:iolist_to_binary(
       io_lib:format("[~s] ~p: ~2048.p~s", [Type, Pid, Msg, CRLF])

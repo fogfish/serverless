@@ -43,6 +43,18 @@ handle_event({info_report, _, {Pid, Type, Msg}}, State) ->
    log(Type, Pid, Msg),
    {ok, State};
 
+handle_event({error, _, {Pid, Format, Data}}, State) ->
+   log(error, Pid, erlang:iolist_to_binary(io_lib:format(Format, Data))),
+   {ok, State};
+
+handle_event({warning_msg, _, {Pid, Format, Data}}, State) ->
+   log(warning, Pid, erlang:iolist_to_binary(io_lib:format(Format, Data))),
+   {ok, State};
+
+handle_event({info_msg, _, {Pid, Format, Data}}, State) ->
+   log(info, Pid, erlang:iolist_to_binary(io_lib:format(Format, Data))),
+   {ok, State};
+
 handle_event(_, State) ->
    {ok, State}.
 
