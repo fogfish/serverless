@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.5.1
+## @version 0.5.2
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -45,8 +45,8 @@ compile: rebar3
 run: _build/default/bin/${APP}
 	@test -z ${JSON} \
 		&& $^ -f ${EVENT} \
-		|| T=`mktemp /tmp/lambda.XXXXXXX` ; trap "{ rm -f $$T; }" EXIT ;\
-			jq -n --arg json "`cat ${JSON}`" -f ${EVENT} > $$T | $^ -f $$T
+		|| { T=`mktemp /tmp/lambda.XXXXXXX` ; trap "{ rm -f $$T; }" EXIT ;\
+			jq -n --arg json "`cat ${JSON}`" -f ${EVENT} > $$T | $^ -f $$T; }
 
 shell:
 	@erl ${EFLAGS}
