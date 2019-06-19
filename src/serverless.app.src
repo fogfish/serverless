@@ -14,6 +14,12 @@
          erlcloud
       ]},
       {mod, {serverless_app, []}},
-      {env, []}
+      {env, []},
+
+      {licenses, ["MIT"]},
+      {maintainers, ["Dmitry Kolesnikov"]},
+      {links, [
+         {"GitHub", "https://github.com/fogfish/serverless"}
+      ]}
    ]
 }.  
