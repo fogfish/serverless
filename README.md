@@ -2,6 +2,10 @@
 
 Serverless Erlang runtime for AWS Lambda Service, widen horizon of Erlang applications.
 
+[![Build Status](https://secure.travis-ci.org/fogfish/serverless.svg?branch=master)](http://travis-ci.org/fogfish/serverless) 
+[![Coverage Status](https://coveralls.io/repos/github/fogfish/serverless/badge.svg?branch=master)](https://coveralls.io/github/fogfish/serverless?branch=master)
+[![Hex.pm](https://img.shields.io/hexpm/v/serverless.svg)](https://hex.pm/packages/serverless)
+
 
 ## Inspiration
 
