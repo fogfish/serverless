@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.5.2
+## @version 0.5.3
 .PHONY: all compile test dist distclean cloud-init cloud-patch cloud
 
 APP    := $(strip $(APP))
@@ -79,7 +79,7 @@ _build/default/bin/${REL}: _build/default/bin/${APP} _build/default/bin/bootstra
 	echo "==> $@"
 
 _build/default/bin/bootstrap:
-	@echo "#!/bin/sh\nexport HOME=/opt\n/opt/serverless/bin/escript ${APP}\n" > $@ ;\
+	@printf "#!/bin/sh\nexport HOME=/opt\n/opt/serverless/bin/escript ${APP}\n" > $@ ;\
 	chmod ugo+x $@
 
 _build/default/bin/${APP}: src/*.erl src/*.app.src
