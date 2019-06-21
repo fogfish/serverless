@@ -26,7 +26,15 @@ The library uses [escript](http://erlang.org/doc/man/escript.html) executables t
 
 The latest version of the library is available at its `master` branch. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
 
-Add the library as dependency to rebar.config
+The stable library release is available via hex packages, add the library as dependency to rebar.config
+
+```erlang
+{deps, [
+  serverless
+]}.
+```
+
+Latest development version is available at GitHuB, add the library as dependency to rebar.config
 
 ```erlang
 {deps, [

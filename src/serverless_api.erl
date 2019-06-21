@@ -10,12 +10,13 @@
 %%
 return({error, Reason}) ->
    {Code, _} = Error = error_code(Reason),
+   Json = error_json(Error, Reason),
    serverless:error(#{
       api    => error,
-      reason => Reason,
+      reason => Json,
       status => Code
    }),
-   return({Code, error_json(Error, Reason)});
+   return({Code, Json});
 
 return({Code, Json}) when is_map(Json) orelse is_list(Json) ->
    return({Code, jsx:encode(Json)});
@@ -68,11 +69,15 @@ error_json({Code, Text}, Reason) ->
 error_reason({_, #{} = Reason}) ->
    Reason;
 error_reason({Reason, Details}) ->
-   typecast:s([typecast:s(Reason), $:, $ , typecast:s(Details)]);
+   erlang:iolist_to_binary(
+      io_lib:format("~2048.p : ~2048.p", [Reason, Details])
+   );
 error_reason(#{} = Reason) ->
    Reason;
 error_reason(Reason) ->
-   typecast:s(Reason).
+   erlang:iolist_to_binary(
+      io_lib:format("~2048.p", [Reason])
+   ).
 
 
 %%
