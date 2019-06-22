@@ -53,6 +53,9 @@ return_code(Code) ->
 %%
 error_code({Reason, _}) ->
    status_code(Reason);
+error_code({require, _, ActualCode})
+ when is_integer(ActualCode) ->
+   status_code(ActualCode);
 error_code(Code) when is_tuple(Code) ->
    status_code(erlang:element(1, Code));
 error_code(Reason) ->
