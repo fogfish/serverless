@@ -25,7 +25,7 @@
  {<<"mimerl">>,{pkg,<<"mimerl">>,<<"1.2.0">>},3},
  {<<"parse_trans">>,{pkg,<<"parse_trans">>,<<"3.3.0">>},4},
  {<<"pipe">>,{pkg,<<"pipes">>,<<"2.0.1">>},1},
- {<<"serverless">>,{path,"../../",{mtime,<<"2019-05-25T00:13:26Z">>}},0},
+ {<<"serverless">>,{path,"../../",{mtime,<<"2019-08-15T15:16:55Z">>}},0},
  {<<"ssl_verify_fun">>,{pkg,<<"ssl_verify_fun">>,<<"1.1.4">>},3},
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.4.1">>},4}]}.
 [

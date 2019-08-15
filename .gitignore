@@ -6,9 +6,12 @@
 *.tag.gz
 *.tgz
 *.zip
+*.sublime-*
+package-lock.json
 test.*
 tests/
 ebin/
 rebar3
 _build/
-*.sublime-*
+node_modules/
+cdk.out/

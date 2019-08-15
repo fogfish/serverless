@@ -11,14 +11,14 @@ Serverless Erlang runtime for AWS Lambda Service, widen horizon of Erlang applic
 
 Run code without provisioning or managing servers is a modern way to deliver applications. This library enables Erlang runtime at AWS Lambda service using [AWS Lambda Runtime Interface](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html). The Erlang runtime is deployed as [AWS Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to your AWS account.
 
-The library uses [escript](http://erlang.org/doc/man/escript.html) executables to package, debug and deploy lambda functions.
+The library uses [escript](http://erlang.org/doc/man/escript.html) executable to package, debug and deploy lambda functions.
 
 
 ## Key features
 
 * Implements Erlang runtime for AWS Lambda service.
 * Deploys Erlang\OTP as AWS Lambda Layer.
-* Defines a lambda's life-cycle workflow.
+* Defines a lambda's life-cycle workflow using AWS CDK.
 * Provides command line tools to orchestrate local development and production deployments.
 
 
@@ -34,7 +34,7 @@ The stable library release is available via hex packages, add the library as dep
 ]}.
 ```
 
-Latest development version is available at GitHuB, add the library as dependency to rebar.config
+Latest development version is available at GitHub, add the library as dependency to rebar.config
 
 ```erlang
 {deps, [
@@ -83,30 +83,16 @@ mkdir myfun && cd myfun
 curl -O -L https://raw.githubusercontent.com/fogfish/serverless/master/serverless.mk
 ```
 
-then, create a Makefile
+then, create a Makefile. Please note, `EVENT` a default mock event used by local execution.
 
 ```bash
 cat > Makefile <<EOF
 APP       = name_of_my_function
-
-ENV      ?= dev
-SERVICE  ?= \${ENV}-stack
-LOGS_TTL ?= 5
-BUCKET   ?= s3://packages/\${SERVICE}
 EVENT    ?= test/event.json
 
 include serverless.mk
 EOF
 ```
-
-The Makefile contains few configuration variables, they streamlines the deployment process
-
-* `ENV` identity of deployment environment. This configuration variable supports managing a multi-environment serverless architecture in AWS using multi-stack approach (one stack per environment). A usual pipelines contains at least two different environments: development and production.
-* `SERVICE` is used to prefix a function name during deployment processes. This one allows to build a flexible deployment approaches of your architectures.
-* `LOGS_TTL` tile-to-live/retention period of lambda log streams.
-* `BUCKET` identity of AWS S3 bucket to store lambda's artifacts.
-* `EVENT` a default mock event used by local execution
-
 
 Use build-in template to generate empty function
 
@@ -119,10 +105,8 @@ The command downloads a [docker images](https://github.com/fogfish/erlang-in-doc
 ```
 +
 +- cloud                           // cloud deployment configurations
-|  +- dev                          // sandbox of development environment configurations
-|  |  +- config.json               // lambda configurations (see aws lambda create-function)
-|  |  +- source.json               // lambda source mappings (see aws lambda create-event-source-mapping)
-| ...            
+|  +- aws.ts                       // aws cdk deployment template
+| ...
 +- src                             // source code of lambda function
 |  +- name-of-my-function.app.src
 |  +- name-of-my-function.erl
@@ -201,59 +185,25 @@ make run JSON=test/payload.json
 
 ### Package function
 
-Use **dist** target to assemble an escript executable containing the project's and its dependencies' BEAM files. This command also build a zip package containing executables of your function 
+Use **dist** target to assemble an escript executable containing the project's and its dependencies' BEAM files. 
 
 ```bash
 make dist
 ```
 
-As the result, it produces `name-of-my-function-{version}.zip` package and `_build/default/bin/name-of-my-function` executables. Note, the version is deducted from latest git tag.
-
-Please note you might need to explicitly package lambda to zip bundle if your are deploying it via AWS S3. Use **publish** target and `BUCKET` variable
-
-```bash
-make publish
-```
+As the result, `_build/default/bin/name-of-my-function` executable. 
 
 
 ### Deploy function
 
-The workflow implements a target **deploy** to orchestrate deployment with help of [aws command line](https://aws.amazon.com/cli/).
+The workflow implements a target **dist-up** to orchestrate deployment with help of [AWS CDK](https://aws.amazon.com/cdk/).
 
-To deploy a function, you need a configuration of target environment. This configuration contains reference to an execution role, lambda layer and other. The configuration format and parameters are 100% compatible with [aws lambda create-function](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-function.html), please refers to official AWS documentation.
+To deploy a function, you need a stack configuration. The serverless library manages environment configurations at `cloud` folder. The stack contains reference to an execution role, lambda layer and other. A minimal configuration is supplied as part of function template. Please refers to official AWS CDK documentation if you need to make advanced config.
 
-The serverless library manages environment configurations at `cloud` folder. A minimal configuration requires following arguments at `cloud/${ENV}/config.json`:
-
-```json
-{
-  "FunctionName": "dev-stack-name_of_my_function",
-  "Runtime": "provided",
-  "Role": "arn:aws:iam::000000000000:role/my-role-function",
-  "Handler": "index.handler",
-  "Timeout": 10,
-  "MemorySize": 256,
-  "Publish": true,
-  "Layers": [
-    "arn:aws:lambda:eu-west-1:000000000000:layer:erlang-serverless:1"
-  ]
-}
-```
-
-Optionally, the lambda function can be associated with event sources(s) using [aws lambda create-event-source-mapping](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-event-source-mapping.html) Sources are specified at `cloud/${ENV}/source.json`, trash this file if you need to skip an association with event sources.
-
-Optionally, you can give a permission to executed the lambda function using [aws lambda add-permission](https://docs.aws.amazon.com/cli/latest/reference/lambda/add-permission.html) Permissions are specified at `cloud/${ENV}/permission.json`, trash this file if you need to skip a permission grant.
-
-
-After the configuration is completed, deploy it
+After the stack configuration is completed, deploy it
 
 ```bash
-make deploy
-```
-
-Use the `ENV` variable to deploy to specific environment
-
-```bash
-make deploy ENV=live
+make dist-up
 ```
 
 **Congratulations, your function is production ready!**
@@ -263,7 +213,7 @@ make deploy ENV=live
 
 A few targets are supported:
 
-* **cloud-free** remove lambda deployment(s) at specified environment.
+* **dist-rm** remove lambda deployment(s) at specified environment.
 * **clean** build artifacts.
 * **distclean** clean up everything except source code.
 
