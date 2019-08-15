@@ -8,14 +8,13 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.5.3
-.PHONY: all compile test dist distclean cloud-init cloud-patch cloud
+## @version 0.6.0
+.PHONY: all compile test dist distclean dist-up dist-rm
 
 APP    := $(strip $(APP))
 VSN    ?= $(shell test -z "`git status --porcelain 2> /dev/null`" && git describe --tags --long 2> /dev/null | sed -e 's/-g[0-9a-f]*//' | sed -e 's/-0//' || echo "`git describe --abbrev=0 --tags 2> /dev/null`-a")
 TEST   ?= tests
 REBAR  ?= 3.9.1
-REL    ?= ${APP}-${VSN}.zip
 DOCKER  = fogfish/erlang-serverless:20.3
 
 ## erlang runtime configration flags
@@ -69,14 +68,7 @@ clean:
 
 ##
 ##
-dist: _build/default/bin/${REL}
-
-_build/default/bin/${REL}: _build/default/bin/${APP} _build/default/bin/bootstrap
-	@rm -f $@ ;\
-	cd _build/default/bin ;\
-	zip -j ${REL} * ;\
-	cd - ;\
-	echo "==> $@"
+dist: _build/default/bin/${APP} _build/default/bin/bootstrap
 
 _build/default/bin/bootstrap:
 	@printf "#!/bin/sh\nexport HOME=/opt\n/opt/serverless/bin/escript ${APP}\n" > $@ ;\
@@ -87,29 +79,28 @@ _build/default/bin/${APP}: src/*.erl src/*.app.src
 
 ##
 ##
-publish: _build/default/bin/${REL}
-	aws s3 cp _build/default/bin/${REL} ${BUCKET}/${APP}.zip
-
-##
-##
 distclean: clean
 	-@rm -Rf _build
 	-@rm rebar3
+	-@rm -Rf cloud/node_modules
 
 
 function:
 	@I=`docker create ${DOCKER}` ;\
+	docker cp $$I:/function/cloud . ;\
 	docker cp $$I:/function/src . ;\
 	docker cp $$I:/function/test . ;\
 	docker cp $$I:/function/rebar.config . ;\
 	docker rm -f $$I ;\
+	sed -i '' -e "s/APP/${APP}/" cloud/* ;\
 	sed -i '' -e "s/APP/${APP}/" src/* ;\
 	sed -i '' -e "s/APP/${APP}/" test/* ;\
 	sed -i '' -e "s/APP/${APP}/g" rebar.config ;\
 	mv src/app.app.src src/${APP}.app.src ;\
 	mv src/app.erl src/${APP}.erl ;\
 	mv test/app_SUITE.erl test/${APP}_SUITE.erl ;\
-	make config
+	mkdir -p test ;\
+	echo "{}" > ${EVENT}
 
 
 #####################################################################
@@ -118,46 +109,15 @@ function:
 ##
 #####################################################################
 
-config:
-	@mkdir -p cloud/${ENV}
-	@mkdir -p test
-	@aws lambda create-function --generate-cli-skeleton | \
-	jq '.FunctionName = "${SERVICE}-${APP}" | .Runtime = "provided" | .Handler = "index.handler"' > cloud/${ENV}/config.json
-	@aws lambda create-event-source-mapping --generate-cli-skeleton | \
-	jq '.FunctionName = "${SERVICE}-${APP}"' > cloud/${ENV}/source.json
-	@aws lambda add-permission --generate-cli-skeleton | \
-	jq '.FunctionName = "${SERVICE}-${APP}"' > cloud/${ENV}/permission.json
-	@echo "{}" > ${EVENT}
+dist-up: dist cloud/node_modules
+	cd cloud && cdk deploy
 
-deploy: _build/default/bin/${REL}
-	@aws lambda get-function --function-name ${SERVICE}-${APP} 2> /dev/null && ${MAKE} cloud-patch || ${MAKE} cloud-init || echo "No updates"
+dist-rm: cloud/node_modules
+	cd cloud && cdk destroy -f
 
+cloud/node_modules:
+	cd cloud && npm install
 
-cloud-init: _build/default/bin/${REL}
-	@aws lambda create-function \
-		--cli-input-json fileb://cloud/${ENV}/config.json \
-		--zip-file fileb://$^
-	@aws logs create-log-group \
-		--log-group-name /aws/lambda/${SERVICE}-${APP}
-	@aws logs put-retention-policy \
-		--log-group-name /aws/lambda/${SERVICE}-${APP} \
-		--retention-in-days ${LOGS_TTL}
-	@test -f cloud/${ENV}/source.json && aws lambda create-event-source-mapping --cli-input-json fileb://cloud/${ENV}/source.json || :
-	@test -f cloud/${ENV}/permission.json && aws lambda add-permission --cli-input-json fileb://cloud/${ENV}/permission.json || :
-		
-
-cloud-patch: _build/default/bin/${REL}
-	@aws lambda update-function-code \
-	   --function-name ${SERVICE}-${APP} \
-	   --publish \
-	   --zip-file fileb://$^
-
-cloud-free:
-	@aws lambda delete-function --function-name ${SERVICE}-${APP}
-	@aws logs delete-log-group --log-group-name /aws/lambda/${SERVICE}-${APP}
-
-##
-##
 layer: _build/erlang-serverless.zip
 	@aws lambda publish-layer-version \
 		--layer-name erlang-serverless \
