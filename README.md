@@ -138,10 +138,9 @@ make test
 The library provides a Lambda Runtime API mock `serverless:mock`, use to test your code.
 
 ```erlang
-serverless:mock(
-   helloworld,                 %% Function entry point
-   #{},                        %% Mock input
-   #{<<"helloworld">> => #{}}  %% Expect output
+#{<<"helloworld">> => #{}} = serverless:mock(
+   helloworld,               %% Function entry point
+   #{}                       %% Mock input, mock function returns Lambda output
 ).
 ```
 

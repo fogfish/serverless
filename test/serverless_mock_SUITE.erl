@@ -18,22 +18,22 @@ all() ->
    ].
 
 spawn_success(_) ->
-   serverless:mock(
+   #{<<"code">> := 200} = serverless:mock(
       serverless_test, 
-      #{<<"do">> => <<"ok">>},
-      #{<<"code">> => 200}
-   ).
+      #{<<"do">> => <<"ok">>}
+   ),
+   ok.
 
 spawn_failure(_) ->
-   serverless:mock(
+   {'EXIT', fail} = serverless:mock(
       serverless_test, 
-      #{<<"do">> => <<"fail">>}, 
-      {'EXIT', fail}
-   ).
+      #{<<"do">> => <<"fail">>}
+   ),
+   ok.
 
 spawn_error(_) ->
-   serverless:mock(
+   {error, badarg} = serverless:mock(
       serverless_test, 
-      #{<<"do">> => <<"error">>},
-      {error, badarg}
-   ).
+      #{<<"do">> => <<"error">>}
+   ),
+   ok.

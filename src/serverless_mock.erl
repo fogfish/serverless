@@ -17,7 +17,7 @@
 
 %%
 %%
-test(Lambda, Mock, Expect) ->
+test(Lambda, Mock, Timeout) ->
    application:ensure_all_started(serverless),
    meck:new(serverless, [passthrough]),
    meck:new(serverless_logger, [passthrough]),
@@ -28,17 +28,27 @@ test(Lambda, Mock, Expect) ->
       end
    ),
 
+   Ref = erlang:make_ref(),
+   Self = self(),
    meck:expect(serverless, spawn,
       fun(Fun, _) ->
          case (catch Fun(Mock)) of
-            {ok, Expect} ->
-               ok;
-            Expect ->
-               ok
+            {ok, Value} ->
+               Self ! {Ref, Value};
+            Value ->
+               Self ! {Ref, Value}
          end
       end
    ),
    Lambda:main([]),
+   Result = receive
+      {Ref, Value} ->
+         Value
+      after Timeout ->
+         exit(timeout)
+   end,
 
    meck:unload(serverless_logger),
-   meck:unload(serverless).
+   meck:unload(serverless),
+   
+   Result.

@@ -25,7 +25,7 @@ ec2(_) ->
    meck:expect(erlcloud_aws, auto_config, fun() -> {ok, undefined} end),
    meck:expect(erlcloud_ec2, describe_instances, fun(_) -> {ok, instances()} end),
 
-   serverless:mock(ec2, #{}, [[<<"1">>, <<"2">>], [<<"3">>, <<"4">>]]),
+   [[<<"1">>, <<"2">>], [<<"3">>, <<"4">>]] = serverless:mock(ec2, #{}),
 
    meck:unload(erlcloud_ec2),
    meck:unload(erlcloud_aws).

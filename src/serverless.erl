@@ -22,6 +22,7 @@
    debug/1,
 
    %% mock lambda runtime
+   mock/2,
    mock/3
 ]).
 
@@ -100,6 +101,9 @@ debug(Msg) ->
 %%%
 %%%------------------------------------------------------------------
 
-mock(Lambda, Mock, Expect) ->
-   serverless_mock:test(Lambda, Mock, Expect).
+mock(Lambda, Mock) ->
+   serverless_mock:test(Lambda, Mock, 5000).
+
+mock(Lambda, Mock, Timeout) ->
+   serverless_mock:test(Lambda, Mock, Timeout).
 
