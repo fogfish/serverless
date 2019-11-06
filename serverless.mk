@@ -8,7 +8,7 @@
 ## @doc
 ##   This makefile is the wrapper of rebar to build serverless applications
 ##
-## @version 0.6.0
+## @version 0.6.1
 .PHONY: all compile test dist distclean dist-up dist-rm
 
 APP    := $(strip $(APP))
@@ -40,6 +40,9 @@ all: rebar3 test
 
 compile: rebar3
 	@./rebar3 compile
+
+deps: rebar3
+	@./rebar3 get-deps
 
 run: _build/default/bin/${APP}
 	@test -z ${JSON} \
